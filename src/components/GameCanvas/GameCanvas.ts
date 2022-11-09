@@ -1,3 +1,4 @@
+import { Tetris } from "../Tetris/Tetris";
 import { Text } from "../Text/Text";
 
 export class GameCanvas {
@@ -23,7 +24,12 @@ export class GameCanvas {
   private init() {
     const ctx = this.node.getContext("2d");
     if (ctx) {
-      this.showIntro(ctx);
+      // this.showIntro(ctx);
+      const game = new Tetris(this.width, this.height);
+      game.play(ctx);
+      game.draw(ctx);
+      game.focused = true;
+      game.attachListeners(ctx);
     }
   }
 

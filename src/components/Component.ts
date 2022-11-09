@@ -28,19 +28,19 @@ export abstract class Component {
   public addEventListener(
     canvas: HTMLCanvasElement,
     type: keyof HTMLElementEventMap,
-    listener: (ev: MouseEvent) => void
+    listener: (ev: any) => void
   ) {
     const listenerWrapper = (e: Event) => {
+      console.log(e);
       if (e instanceof MouseEvent) {
         if (this.doesPointIntercept(e.clientX, e.clientY)) {
           listener(e);
         }
+      } else {
+        if (this.focused) {
+          listener(e as any);
+        }
       }
-      //   else {
-      //     if (this.focused) {
-      //       listener(e);
-      //     }
-      //   }
     };
 
     if (!this.eventMap.has(type)) this.eventMap.set(type, new Map());
