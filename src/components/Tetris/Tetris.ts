@@ -10,7 +10,7 @@ export class Tetris extends Component {
   width: number;
   height: number;
   cellSize = 51; //1 pixel for gap
-  blocks: Block[] = [];
+  currentBlock: Block;
   constructor(width: number, height: number) {
     super();
     this.width = width;
@@ -26,13 +26,13 @@ export class Tetris extends Component {
   attachListeners(ctx: CanvasRenderingContext2D) {
     window.addEventListener("keydown", (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") {
-        this.blocks[this.blocks.length - 1].moveLeft();
+        this.currentBlock.moveLeft();
         this.draw(ctx);
       } else if (e.key === "ArrowRight") {
-        this.blocks[this.blocks.length - 1].moveRight();
+        this.currentBlock.moveRight();
         this.draw(ctx);
       } else if (e.key == "ArrowDown") {
-        this.blocks[this.blocks.length - 1].moveDown();
+        this.currentBlock.moveDown();
         this.draw(ctx);
       }
     });
@@ -74,23 +74,63 @@ export class Tetris extends Component {
 
   addRandomBlock() {
     const B = Random.item([Pipe]);
-    const pipe = new B(this);
-    this.blocks.push(pipe);
+    this.currentBlock = new B(this);
+  }
+
+  gameOverCb: CallableFunction;
+
+  onGameOver(cb: CallableFunction) {
+    this.gameOverCb = cb;
   }
 
   public play(ctx: CanvasRenderingContext2D) {
     this.addRandomBlock();
     this.draw(ctx);
 
-    window.setInterval(() => {
-      const fallen = !this.blocks[this.blocks.length - 1].moveDown();
+    const timerId = window.setInterval(() => {
+      const fallen = !this.currentBlock.moveDown();
       this.draw(ctx);
 
       if (fallen) {
+        this.clearFilledRows();
         this.addRandomBlock();
+        const fallen = this.currentBlock.moveDown();
+        if (!fallen) {
+          window.clearInterval(timerId);
+          this.gameOverCb?.();
+          return;
+        }
+
         this.draw(ctx);
       }
     }, 1000);
+  }
+
+  clearFilledRows() {
+    for (let r = this.matrixHeight - 1; r >= 0; r--) {
+      //reverse
+      let areAllFilled = true;
+      for (let c = this.matrixWidth - 1; c >= 0; c--) {
+        if (!this.matrix[r][c]) {
+          areAllFilled = false;
+          break;
+        }
+      }
+
+      if (areAllFilled) {
+        for (let _r = r; _r >= 0; _r--) {
+          //reverse
+          for (let _c = this.matrixWidth - 1; _c >= 0; _c--) {
+            if (_r != 0) {
+              this.matrix[_r][_c] = this.matrix[_r - 1][_c];
+            } else {
+              this.matrix[_r][_c] = false;
+            }
+          }
+        }
+        r++;
+      }
+    }
   }
 
   doesPointIntercept(x: number, y: number): boolean {

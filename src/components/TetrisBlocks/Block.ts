@@ -12,7 +12,7 @@ export abstract class Block {
     this.blockHeight = height;
 
     this.x = Math.floor(container.matrixWidth / 2);
-    this.y = 1 - height;
+    this.y = -height;
   }
 
   protected traverse(

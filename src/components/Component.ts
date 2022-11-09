@@ -31,7 +31,6 @@ export abstract class Component {
     listener: (ev: any) => void
   ) {
     const listenerWrapper = (e: Event) => {
-      console.log(e);
       if (e instanceof MouseEvent) {
         if (this.doesPointIntercept(e.clientX, e.clientY)) {
           listener(e);

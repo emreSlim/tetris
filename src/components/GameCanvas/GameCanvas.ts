@@ -24,16 +24,13 @@ export class GameCanvas {
   private init() {
     const ctx = this.node.getContext("2d");
     if (ctx) {
-      // this.showIntro(ctx);
-      const game = new Tetris(this.width, this.height);
-      game.play(ctx);
-      game.draw(ctx);
-      game.focused = true;
-      game.attachListeners(ctx);
+      this.showIntro(ctx);
     }
   }
 
   private showIntro(ctx: CanvasRenderingContext2D) {
+    ctx.clearRect(0, 0, this.width, this.height);
+
     const welcome = new Text("Welcome!", this.width / 2, this.height / 2, 72);
 
     welcome.centered = true;
@@ -42,7 +39,6 @@ export class GameCanvas {
     const start = new Text("Start", welcome.x, welcome.y + 50, 30);
     start.centered = welcome.centered;
     start.draw(ctx);
-
     const onStartClick = () => {
       start.removeEventListener(this.node, "click", onStartClick);
       this.startGame(ctx);
@@ -51,7 +47,30 @@ export class GameCanvas {
     start.addEventListener(this.node, "click", onStartClick);
   }
 
+  showGameOver(ctx: CanvasRenderingContext2D) {
+    ctx.clearRect(0, 0, this.width, this.height);
+    const gameover = new Text(
+      "Game Over..",
+      this.width / 2,
+      this.height / 2,
+      48
+    );
+    gameover.centered = true;
+
+    gameover.draw(ctx);
+  }
+
   private startGame(ctx: CanvasRenderingContext2D) {
-    console.log("start game");
+    const game = new Tetris(this.width, this.height);
+    game.play(ctx);
+    game.draw(ctx);
+    game.focused = true;
+    game.attachListeners(ctx);
+    game.onGameOver(() => {
+      this.showGameOver(ctx);
+      window.setTimeout(() => {
+        this.showIntro(ctx);
+      }, 3000);
+    });
   }
 }
