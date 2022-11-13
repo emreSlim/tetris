@@ -21,7 +21,7 @@ export abstract class Block {
   }
 
   freeze() {
-    this.traverse(() => 2);
+    this.traverse((val) => (val > 0 ? val : 2));
   }
 
   write() {
@@ -34,18 +34,30 @@ export abstract class Block {
 
   abstract initBlock(): void;
 
-  flipHrizontally() {}
-
-  flipVertically() {}
-
-  flipXY() {}
-
   rotate(antiClockwise?: boolean) {
     this.erase();
+    const newBlock: boolean[][] = new Array();
+    this.block.forEach(() => {
+      newBlock.push(new Array());
+    });
+    for (let r = 0; r < this.rowCount; r++) {
+      for (let c = 0; c < this.colCount; c++) {
+        newBlock[c].unshift(this.block[r][c]);
+      }
+    }
 
+    this.block = newBlock;
     const tempH = this.rowCount;
     this.rowCount = this.colCount;
     this.colCount = tempH;
+
+    if (this.colCount + this.c >= this.container.matrixWidth) {
+      this.c = this.container.matrixWidth - this.colCount;
+    }
+
+    if (this.rowCount + this.r >= this.container.matrixHeight) {
+      this.r = this.container.matrixHeight - this.rowCount;
+    }
 
     this.write();
   }
