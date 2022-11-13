@@ -1,7 +1,6 @@
 import { Random } from "../../helpers/ExtendedClasses";
 import { Component } from "../Component";
-import { Block } from "../TetrisBlocks/Block";
-import { Pipe } from "../TetrisBlocks/Pipe";
+import { Block, L, P, Pipe, Square } from "../TetrisBlocks";
 
 export class Tetris extends Component {
   matrix: number[][]; // -1 = space; 0 = about to clear; 1 = filled // 2 = moving
@@ -33,6 +32,9 @@ export class Tetris extends Component {
         this.draw(ctx);
       } else if (e.key == "ArrowDown") {
         this.currentBlock.moveDown();
+        this.draw(ctx);
+      } else if (e.key == " ") {
+        this.currentBlock.rotate();
         this.draw(ctx);
       }
     });
@@ -76,7 +78,7 @@ export class Tetris extends Component {
   }
 
   private addRandomBlock() {
-    const B = Random.item([Pipe]);
+    const B = Random.item([Square, P, L, Pipe]);
     this.currentBlock = new B(this);
   }
 

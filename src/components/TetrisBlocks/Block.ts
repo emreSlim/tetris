@@ -1,11 +1,24 @@
 import { Tetris } from "../Tetris/Tetris";
 
+export class PointSet extends Array<number[]> {
+  has = (val: number[]) => {
+    for (let _val of this)
+      if (_val[0] === val[0] && _val[1] === val[1]) return true;
+
+    return false;
+  };
+  add = (val: number[]) => {
+    if (!this.has(val)) this.push(val);
+  };
+}
+
 export abstract class Block {
   protected x = 0;
   protected y = 0;
   protected blockHeight: number;
   protected blockWidth: number;
   protected container: Tetris;
+  protected pointSet: PointSet;
   constructor(container: Tetris, width: number, height: number) {
     this.container = container;
     this.blockWidth = width;
@@ -13,31 +26,53 @@ export abstract class Block {
 
     this.x = Math.floor(container.matrixWidth / 2);
     this.y = -height;
+
+    this.pointSet = new PointSet();
+    this.initPoints();
+  }
+
+  abstract initPoints(): void;
+  rotate(antiClockwise?: boolean) {
+    this.erase();
+    this.pointSet.forEach((point) => {
+      const temp = point[0];
+      point[0] = point[1];
+      point[1] = temp;
+    });
+    const [w, h] = this.pointSet.reduce(
+      (a, p) => {
+        return [Math.max(a[0], p[0] + 1), Math.max(a[1], p[1] + 1)];
+      },
+      [0, 0]
+    );
+
+    this.x += Math.floor((this.blockWidth - w) / 2);
+    this.y += Math.floor((this.blockHeight - h) / 2);
+
+    this.blockHeight = h;
+    this.blockWidth = w;
+    this.write();
   }
 
   protected traverse(
     cb: (val: number, row: number, col: number) => number | boolean | void
   ) {
-    outer: for (let r = 0; r < this.blockHeight; r++) {
-      for (let c = 0; c < this.blockWidth; c++) {
-        const row = r + this.y;
-        const col = c + this.x;
+    outer: for (let [pointX, pointY] of this.pointSet) {
+      const col = this.x + pointX;
+      const row = this.y + pointY;
+      const isOutOfFrame =
+        row < 0 ||
+        col < 0 ||
+        row > this.container.matrixHeight ||
+        col > this.container.matrixWidth;
+      const val = isOutOfFrame ? -1 : this.container.matrix[row][col];
 
-        const isOutOfFrame =
-          row < 0 ||
-          col < 0 ||
-          row > this.container.matrixHeight ||
-          col > this.container.matrixWidth;
-
-        const val = isOutOfFrame ? -1 : this.container.matrix[row][col];
-
-        const returnVal = cb(val, row, col);
-        if (!isOutOfFrame && typeof returnVal === "number") {
-          this.container.matrix[row][col] = returnVal;
-        } else if (returnVal === false) {
-          //-1 stops the loops
-          break outer;
-        }
+      const returnVal = cb(val, row, col);
+      if (!isOutOfFrame && typeof returnVal === "number") {
+        this.container.matrix[row][col] = returnVal;
+      } else if (returnVal === false) {
+        //-1 stops the loops
+        break outer;
       }
     }
   }
@@ -53,17 +88,17 @@ export abstract class Block {
     if ((x < 0 && this.isOnLeft()) || (x > 0 && this.isOnRight())) return false;
 
     if (x !== 0) {
-      const startingX = x > 0 ? this.x + this.blockWidth : this.x + x;
-      const limitX = x > 0 ? startingX + x : this.x;
-
-      for (let r = this.y; r < this.blockHeight + this.y; r++) {
-        if (r < 0) continue;
-        if (r >= this.container.matrixHeight) break;
-        for (let c = startingX; c < limitX; c++) {
-          if (c < 0) continue;
-          if (c >= this.container.matrixWidth) break;
-
-          if (this.container.matrix[r][c] == 1) return false; //already occupied
+      for (let [pointX, pointY] of this.pointSet) {
+        const col = this.x + pointX + x;
+        const row = this.y + pointY;
+        if (
+          !this.pointSet.has([col, row]) &&
+          col >= 0 &&
+          col < this.container.matrixWidth &&
+          row >= 0 &&
+          row < this.container.matrixHeight
+        ) {
+          if (this.container.matrix[row][col] == 1) return false;
         }
       }
     }
@@ -75,17 +110,18 @@ export abstract class Block {
     if ((y < 0 && this.isOnTop()) || (y > 0 && this.isOnBottom())) return false;
 
     if (y !== 0) {
-      const startingY = y > 0 ? this.y + this.blockHeight : this.y + y;
-      const limitY = y > 0 ? startingY + y : this.y;
+      for (let [pointX, pointY] of this.pointSet) {
+        const col = this.x + pointX;
+        const row = this.y + pointY + y;
 
-      for (let r = startingY; r < limitY; r++) {
-        if (r < 0) continue;
-        if (r >= this.container.matrixHeight) break;
-
-        for (let c = this.x; c < this.blockWidth + this.x; c++) {
-          if (c < 0) continue;
-          if (c >= this.container.matrixWidth) break;
-          if (this.container.matrix[r][c] == 1) return false; //already occupied
+        if (
+          !this.pointSet.has([col, row]) &&
+          col >= 0 &&
+          col < this.container.matrixWidth &&
+          row >= 0 &&
+          row < this.container.matrixHeight
+        ) {
+          if (this.container.matrix[row][col] == 1) return false;
         }
       }
     }
