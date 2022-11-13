@@ -1,4 +1,4 @@
-import { Random } from "../../helpers/ExtendedClasses";
+import { Random, Debouncer } from "../../helpers";
 import { Component } from "../Component";
 import { Block, L, LOpposite, P, Pipe, Square } from "../TetrisBlocks";
 
@@ -32,17 +32,43 @@ export class Tetris extends Component {
     window.addEventListener("keydown", (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") {
         this.currentBlock.moveLeft();
-        this.draw(ctx);
-      } else if (e.key === "ArrowRight") {
-        this.currentBlock.moveRight();
-        this.draw(ctx);
-      } else if (e.key == "ArrowDown") {
-        this.currentBlock.moveDown();
-        this.draw(ctx);
-      } else if (e.key == " ") {
-        this.currentBlock.rotate();
-        this.draw(ctx);
       }
+      if (e.key === "ArrowRight") {
+        this.currentBlock.moveRight();
+      }
+      if (e.key == "ArrowDown") {
+        this.currentBlock.moveDown();
+      }
+      if (e.key == " ") {
+        this.currentBlock.rotate();
+      }
+
+      this.draw(ctx);
+    });
+
+    const guestureCB = new Debouncer((e: PointerEvent) => {
+      if (e.movementX > 0) {
+        this.currentBlock.moveRight();
+      }
+      if (e.movementX < 0) {
+        this.currentBlock.moveLeft();
+      }
+      if (e.movementY > 0) {
+        this.currentBlock.moveDown();
+      }
+      this.draw(ctx);
+    }, 100).schedule;
+
+    document.addEventListener("pointerdown", () => {
+      window.addEventListener("pointermove", guestureCB);
+    });
+    document.addEventListener("pointerup", () => {
+      window.removeEventListener("pointermove", guestureCB);
+    });
+
+    document.addEventListener("dblclick", (e: PointerEvent) => {
+      this.currentBlock.rotate();
+      this.draw(ctx);
     });
   }
 
