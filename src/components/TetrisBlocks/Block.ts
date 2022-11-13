@@ -16,7 +16,7 @@ export abstract class Block {
   }
 
   protected traverse(
-    cb: (val: boolean, row: number, col: number) => boolean | void | number
+    cb: (val: number, row: number, col: number) => number | boolean | void
   ) {
     outer: for (let r = 0; r < this.blockHeight; r++) {
       for (let c = 0; c < this.blockWidth; c++) {
@@ -29,12 +29,12 @@ export abstract class Block {
           row > this.container.matrixHeight ||
           col > this.container.matrixWidth;
 
-        const val = isOutOfFrame ? false : this.container.matrix[row][col];
+        const val = isOutOfFrame ? -1 : this.container.matrix[row][col];
 
         const returnVal = cb(val, row, col);
-        if (!isOutOfFrame && typeof returnVal === "boolean") {
+        if (!isOutOfFrame && typeof returnVal === "number") {
           this.container.matrix[row][col] = returnVal;
-        } else if (returnVal === -1) {
+        } else if (returnVal === false) {
           //-1 stops the loops
           break outer;
         }
@@ -63,7 +63,7 @@ export abstract class Block {
           if (c < 0) continue;
           if (c >= this.container.matrixWidth) break;
 
-          if (this.container.matrix[r][c] == true) return false; //already occupied
+          if (this.container.matrix[r][c] == 1) return false; //already occupied
         }
       }
     }
@@ -85,7 +85,7 @@ export abstract class Block {
         for (let c = this.x; c < this.blockWidth + this.x; c++) {
           if (c < 0) continue;
           if (c >= this.container.matrixWidth) break;
-          if (this.container.matrix[r][c] == true) return false; //already occupied
+          if (this.container.matrix[r][c] == 1) return false; //already occupied
         }
       }
     }

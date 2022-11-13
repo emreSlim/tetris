@@ -9,10 +9,10 @@ export class Pipe extends Block {
     this.write();
   }
   write() {
-    this.traverse(() => true);
+    this.traverse(() => 2);
   }
 
   erase() {
-    this.traverse(() => false);
+    this.traverse(() => -1);
   }
 }

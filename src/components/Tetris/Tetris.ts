@@ -4,7 +4,7 @@ import { Block } from "../TetrisBlocks/Block";
 import { Pipe } from "../TetrisBlocks/Pipe";
 
 export class Tetris extends Component {
-  matrix: boolean[][];
+  matrix: number[][]; // -1 = space; 0 = about to clear; 1 = filled // 2 = moving
   matrixWidth: number;
   matrixHeight: number;
   width: number;
@@ -42,16 +42,18 @@ export class Tetris extends Component {
     for (let r = 0; r < this.matrixHeight; r++) {
       this.matrix[r] = new Array(this.matrixWidth);
       for (let c = 0; c < this.matrixWidth; c++) {
-        this.matrix[r][c] = false;
+        this.matrix[r][c] = -1;
       }
     }
   }
 
-  traverse(cb: (val: boolean, row: number, col: number) => boolean | void) {
+  private traverse(
+    cb: (val: number, row: number, col: number) => number | void
+  ) {
     for (let r = 0; r < this.matrixHeight; r++) {
       for (let c = 0; c < this.matrixWidth; c++) {
         const returnVal = cb(this.matrix[r][c], r, c);
-        if (typeof returnVal === "boolean") {
+        if (typeof returnVal === "number") {
           this.matrix[r][c] = returnVal;
         }
       }
@@ -61,7 +63,8 @@ export class Tetris extends Component {
   protected _draw(ctx: CanvasRenderingContext2D): void {
     ctx.clearRect(0, 0, this.width, this.width);
     this.traverse((val, r, c) => {
-      ctx.fillStyle = val ? "red" : "#bbbbbb";
+      ctx.fillStyle =
+        val == 1 ? "#f00" : val == 0 ? "#0f0" : val == 2 ? "#00f" : "#bbb";
 
       ctx.fillRect(
         c * this.cellSize,
@@ -72,7 +75,7 @@ export class Tetris extends Component {
     });
   }
 
-  addRandomBlock() {
+  private addRandomBlock() {
     const B = Random.item([Pipe]);
     this.currentBlock = new B(this);
   }
@@ -92,10 +95,19 @@ export class Tetris extends Component {
       this.draw(ctx);
 
       if (fallen) {
-        this.clearFilledRows();
+        const filledRows = this.getFilledRows();
+        if (filledRows.length > 0) {
+          this.setFilledRows(filledRows);
+          this.draw(ctx);
+          window.setTimeout(() => {
+            this.clearFilledRows(filledRows);
+          }, 500);
+        }
+        this.traverse((val) => (val == 2 ? 1 : val));
+
         this.addRandomBlock();
-        const fallen = this.currentBlock.moveDown();
-        if (!fallen) {
+        const newBlockFallen = this.currentBlock.moveDown();
+        if (!newBlockFallen) {
           window.clearInterval(timerId);
           this.gameOverCb?.();
           return;
@@ -106,29 +118,40 @@ export class Tetris extends Component {
     }, 1000);
   }
 
-  clearFilledRows() {
+  private getFilledRows = () => {
+    const indices: number[] = [];
     for (let r = this.matrixHeight - 1; r >= 0; r--) {
       //reverse
       let areAllFilled = true;
       for (let c = this.matrixWidth - 1; c >= 0; c--) {
-        if (!this.matrix[r][c]) {
+        if (this.matrix[r][c] === -1) {
           areAllFilled = false;
           break;
         }
       }
+      if (areAllFilled) indices.unshift(r);
+    }
+    return indices;
+  };
 
-      if (areAllFilled) {
-        for (let _r = r; _r >= 0; _r--) {
-          //reverse
-          for (let _c = this.matrixWidth - 1; _c >= 0; _c--) {
-            if (_r != 0) {
-              this.matrix[_r][_c] = this.matrix[_r - 1][_c];
-            } else {
-              this.matrix[_r][_c] = false;
-            }
+  private setFilledRows = (indices: number[]) => {
+    for (let r of indices) {
+      for (let c = 0; c < this.matrixWidth; c++) {
+        this.matrix[r][c] = 0;
+      }
+    }
+  };
+
+  private clearFilledRows(indices: number[]) {
+    for (let rowIndex of indices) {
+      for (let r = rowIndex; r >= 0; r--) {
+        for (let c = 0; c < this.matrixWidth; c++) {
+          if (this.matrix[r][c] !== 2) {
+            if (r === 0) this.matrix[r][c] = -1;
+            else if (this.matrix[r - 1][c] !== 2)
+              this.matrix[r][c] = this.matrix[r - 1][c];
           }
         }
-        r++;
       }
     }
   }
