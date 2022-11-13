@@ -1,6 +1,6 @@
 import { Random } from "../../helpers/ExtendedClasses";
 import { Component } from "../Component";
-import { Block, L, P, Pipe, Square } from "../TetrisBlocks";
+import { Block, L, LOpposite, P, Pipe, Square } from "../TetrisBlocks";
 
 export class Tetris extends Component {
   matrix: number[][]; // -1 = space; 0 = about to clear; 1 = filled // 2 = moving
@@ -10,6 +10,7 @@ export class Tetris extends Component {
   height: number;
   cellSize = 51; //1 pixel for gap
   currentBlock: Block;
+  score = 0;
   constructor(width: number, height: number) {
     super();
     this.width = width;
@@ -78,7 +79,7 @@ export class Tetris extends Component {
   }
 
   private addRandomBlock() {
-    const B = Random.item([Square, P, L, Pipe]);
+    const B = Random.item([Square, P, L, Pipe, LOpposite]);
     this.currentBlock = new B(this);
   }
 
@@ -154,6 +155,7 @@ export class Tetris extends Component {
         }
       }
     }
+    this.score += indices.length * this.matrixWidth;
   }
 
   doesPointIntercept(x: number, y: number): boolean {

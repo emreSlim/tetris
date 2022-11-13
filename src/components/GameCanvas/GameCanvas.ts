@@ -31,12 +31,17 @@ export class GameCanvas {
   private showIntro(ctx: CanvasRenderingContext2D) {
     ctx.clearRect(0, 0, this.width, this.height);
 
-    const welcome = new Text("Welcome!", this.width / 2, this.height / 2, 72);
+    const welcome = new Text(
+      "Tetris Blocks",
+      this.width / 2,
+      this.height / 2,
+      72
+    );
 
     welcome.centered = true;
     welcome.draw(ctx);
 
-    const start = new Text("Start", welcome.x, welcome.y + 50, 30);
+    const start = new Text("Start", welcome.x, welcome.y + 100, 30);
     start.centered = welcome.centered;
     start.draw(ctx);
     const onStartClick = () => {
@@ -47,7 +52,7 @@ export class GameCanvas {
     start.addEventListener(this.node, "click", onStartClick);
   }
 
-  showGameOver(ctx: CanvasRenderingContext2D) {
+  showGameOver(ctx: CanvasRenderingContext2D, score: number) {
     ctx.clearRect(0, 0, this.width, this.height);
     const gameover = new Text(
       "Game Over..",
@@ -58,6 +63,16 @@ export class GameCanvas {
     gameover.centered = true;
 
     gameover.draw(ctx);
+
+    const scoreText = new Text(
+      "Score: " + score,
+      this.width / 2,
+      50 + this.height / 2,
+      64
+    );
+    scoreText.centered = true;
+
+    scoreText.draw(ctx);
   }
 
   private startGame(ctx: CanvasRenderingContext2D) {
@@ -67,7 +82,7 @@ export class GameCanvas {
     game.focused = true;
     game.attachListeners(ctx);
     game.onGameOver(() => {
-      this.showGameOver(ctx);
+      this.showGameOver(ctx, game.score);
       window.setTimeout(() => {
         this.showIntro(ctx);
       }, 3000);

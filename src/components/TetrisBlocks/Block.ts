@@ -32,25 +32,44 @@ export abstract class Block {
   }
 
   abstract initPoints(): void;
-  rotate(antiClockwise?: boolean) {
-    this.erase();
+
+  flipHrizontally() {
+    for (let point of this.pointSet) {
+      point[0] = this.blockWidth - 1 - point[0];
+      // point[1] = this.blockHeight - 1 - point[1];
+    }
+  }
+
+  flipVertically() {
+    for (let point of this.pointSet) {
+      // point[0] = this.blockWidth - 1 - point[0];
+      point[1] = this.blockHeight - 1 - point[1];
+    }
+  }
+
+  flipXY (){
     this.pointSet.forEach((point) => {
       const temp = point[0];
       point[0] = point[1];
       point[1] = temp;
     });
-    const [w, h] = this.pointSet.reduce(
-      (a, p) => {
-        return [Math.max(a[0], p[0] + 1), Math.max(a[1], p[1] + 1)];
-      },
-      [0, 0]
-    );
+  }
 
-    this.x += Math.floor((this.blockWidth - w) / 2);
-    this.y += Math.floor((this.blockHeight - h) / 2);
+  rotate(antiClockwise?: boolean) {
+    this.erase();
 
-    this.blockHeight = h;
-    this.blockWidth = w;
+    this.pointSet.forEach((point) => {
+      const temp = point[0];
+      point[0] = point[1];
+      point[1] = temp;
+    });
+
+    this.flipHrizontally();
+
+    const tempH = this.blockHeight;
+    this.blockHeight = this.blockWidth;
+    this.blockWidth = tempH;
+
     this.write();
   }
 
