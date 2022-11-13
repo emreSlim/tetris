@@ -3,7 +3,7 @@ import { Component } from "../Component";
 import { Block, L, LOpposite, P, Pipe, Square } from "../TetrisBlocks";
 
 export class Tetris extends Component {
-  matrix: number[][]; // -1 = space; 0 = about to clear; 1 = filled // 2 = moving
+  matrix: number[][]; // -1 = space; 0 = moving; 1 = about to clear; 2 = filled
   matrixWidth: number;
   matrixHeight: number;
   width: number;
@@ -11,6 +11,7 @@ export class Tetris extends Component {
   cellSize = 51; //1 pixel for gap
   currentBlock: Block;
   score = 0;
+
   constructor(width: number, height: number) {
     super();
     this.width = width;
@@ -21,6 +22,10 @@ export class Tetris extends Component {
     this.matrix = new Array(this.matrixHeight);
 
     this.fillMatrix();
+  }
+
+  isLegalCell(r: number, c: number) {
+    return c >= 0 && c < this.matrixWidth && r >= 0 && r < this.matrixHeight;
   }
 
   attachListeners(ctx: CanvasRenderingContext2D) {
@@ -67,7 +72,7 @@ export class Tetris extends Component {
     ctx.clearRect(0, 0, this.width, this.width);
     this.traverse((val, r, c) => {
       ctx.fillStyle =
-        val == 1 ? "#f00" : val == 0 ? "#0f0" : val == 2 ? "#00f" : "#bbb";
+        val == 2 ? "#f00" : val == 1 ? "#0f0" : val == 0 ? "#00f" : "#bbb";
 
       ctx.fillRect(
         c * this.cellSize,
@@ -105,7 +110,7 @@ export class Tetris extends Component {
             this.clearFilledRows(filledRows);
           }, 500);
         }
-        this.traverse((val) => (val == 2 ? 1 : val));
+        this.currentBlock.freeze();
 
         this.addRandomBlock();
         const newBlockFallen = this.currentBlock.moveDown();
@@ -138,7 +143,7 @@ export class Tetris extends Component {
   private setFilledRows = (indices: number[]) => {
     for (let r of indices) {
       for (let c = 0; c < this.matrixWidth; c++) {
-        this.matrix[r][c] = 0;
+        this.matrix[r][c] = 1;
       }
     }
   };
@@ -147,9 +152,11 @@ export class Tetris extends Component {
     for (let rowIndex of indices) {
       for (let r = rowIndex; r >= 0; r--) {
         for (let c = 0; c < this.matrixWidth; c++) {
-          if (this.matrix[r][c] !== 2) {
+          if (this.matrix[r][c] !== 0) {
+            //if not moving
             if (r === 0) this.matrix[r][c] = -1;
-            else if (this.matrix[r - 1][c] !== 2)
+            else if (this.matrix[r - 1][c] !== 0)
+              //if not moving
               this.matrix[r][c] = this.matrix[r - 1][c];
           }
         }
