@@ -3,3 +3,9 @@ body{
     margin: 0px;
     overflow: hidden;
 }
+
+html {
+    height: 100%;
+    touch-action: manipulation;
+
+  }

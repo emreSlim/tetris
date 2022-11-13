@@ -155,7 +155,7 @@ export class GameCanvas {
         ctx,
         this.width,
         this.height,
-        50 / Math.sqrt(level),
+        undefined,
         1000 / level
       );
       game.play(ctx);
