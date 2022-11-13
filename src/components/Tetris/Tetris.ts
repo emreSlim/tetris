@@ -11,9 +11,20 @@ export class Tetris extends Component {
   cellSize = 51; //1 pixel for gap
   currentBlock: Block;
   score = 0;
+  frameDelay = 1000;
+  ctx: CanvasRenderingContext2D;
 
-  constructor(width: number, height: number) {
+  constructor(
+    ctx: CanvasRenderingContext2D,
+    width: number,
+    height: number,
+    cellSize = 51,
+    frameDelay = 1000
+  ) {
     super();
+    this.cellSize = cellSize;
+    this.frameDelay = frameDelay;
+    this.ctx = ctx;
     this.width = width;
     this.height = height;
     this.matrixWidth = Math.floor(width / this.cellSize);
@@ -28,49 +39,72 @@ export class Tetris extends Component {
     return c >= 0 && c < this.matrixWidth && r >= 0 && r < this.matrixHeight;
   }
 
-  attachListeners(ctx: CanvasRenderingContext2D) {
-    window.addEventListener("keydown", (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") {
-        this.currentBlock.moveLeft();
-      }
-      if (e.key === "ArrowRight") {
-        this.currentBlock.moveRight();
-      }
-      if (e.key == "ArrowDown") {
-        this.currentBlock.moveDown();
-      }
-      if (e.key == " ") {
-        this.currentBlock.rotate();
-      }
+  destroy() {
+    window.removeEventListener("keydown", this.onKeyDown);
+    document.removeEventListener("pointerdown", this.onPointerDown);
 
-      this.draw(ctx);
-    });
-
-    const guestureCB = new Debouncer((e: PointerEvent) => {
-      if (e.movementX > 0) {
-        this.currentBlock.moveRight();
-      }
-      if (e.movementX < 0) {
-        this.currentBlock.moveLeft();
-      }
-      if (e.movementY > 0) {
-        this.currentBlock.moveDown();
-      }
-      this.draw(ctx);
-    }, 100).schedule;
-
-    document.addEventListener("pointerdown", () => {
-      window.addEventListener("pointermove", guestureCB);
-    });
-    document.addEventListener("pointerup", () => {
-      window.removeEventListener("pointermove", guestureCB);
-    });
-
-    document.addEventListener("dblclick", (e: PointerEvent) => {
-      this.currentBlock.rotate();
-      this.draw(ctx);
-    });
+    document.removeEventListener("dblclick", this.onDblClick);
   }
+
+  onKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "ArrowLeft") {
+      this.currentBlock.moveLeft();
+    }
+    if (e.key === "ArrowRight") {
+      this.currentBlock.moveRight();
+    }
+    if (e.key == "ArrowDown") {
+      this.currentBlock.moveDown();
+    }
+    if (e.key == " ") {
+      this.currentBlock.rotate();
+    }
+
+    this.draw(this.ctx);
+  };
+
+  attachListeners(ctx: CanvasRenderingContext2D) {
+    window.addEventListener("keydown", this.onKeyDown);
+
+    // const guestureCB = new Debouncer((e: PointerEvent) => {
+    //   if (e.movementX > 0) {
+    //     this.currentBlock.moveRight();
+    //   }
+    //   if (e.movementX < 0) {
+    //     this.currentBlock.moveLeft();
+    //   }
+    //   if (e.movementY > 0) {
+    //     this.currentBlock.moveDown();
+    //   }
+    //   this.draw(ctx);
+    // }, 100).schedule;
+
+    // document.addEventListener("pointerdown", () => {
+    //   window.addEventListener("pointermove", guestureCB);
+    // });
+    // document.addEventListener("pointerup", () => {
+    //   window.removeEventListener("pointermove", guestureCB);
+    // });
+
+    document.addEventListener("pointerdown", this.onPointerDown);
+
+    document.addEventListener("dblclick", this.onDblClick);
+  }
+
+  onPointerDown = (e: PointerEvent) => {
+    if (e.clientX > this.width * (2 / 3)) {
+      this.currentBlock.moveRight();
+    } else if (e.clientX < this.width / 3) {
+      this.currentBlock.moveLeft();
+    } else if (e.clientY > this.height * (2 / 3)) {
+      this.currentBlock.moveDown();
+    } else {
+      this.currentBlock.rotate();
+    }
+
+    this.draw(this.ctx);
+  };
+  onDblClick = (e: PointerEvent) => {};
 
   fillMatrix() {
     for (let r = 0; r < this.matrixHeight; r++) {
@@ -121,6 +155,7 @@ export class Tetris extends Component {
   }
 
   public play(ctx: CanvasRenderingContext2D) {
+    this.fillMatrix();
     this.addRandomBlock();
     this.draw(ctx);
 
@@ -134,7 +169,7 @@ export class Tetris extends Component {
           this.draw(ctx);
           window.setTimeout(() => {
             this.clearFilledRows(filledRows);
-          }, 500);
+          }, this.frameDelay / 2);
         }
         this.currentBlock.freeze();
 
@@ -147,7 +182,7 @@ export class Tetris extends Component {
         }
       }
       this.draw(ctx);
-    }, 1000);
+    }, this.frameDelay);
   }
 
   private getFilledRows = () => {

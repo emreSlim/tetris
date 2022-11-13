@@ -24,7 +24,7 @@ export class Text extends Component {
 
   protected _draw(ctx: CanvasRenderingContext2D): void {
     ctx.font = `${this.fontSize}px ${this.fontFamily}`;
-
+    ctx.fillStyle = this.style;
     if (this.centered) {
       this.metrics = ctx.measureText(this.text);
       ctx.fillText(
