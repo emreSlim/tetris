@@ -92,7 +92,6 @@ export class Tetris extends Component {
 
     const timerId = window.setInterval(() => {
       const fallen = !this.currentBlock.moveDown();
-      this.draw(ctx);
 
       if (fallen) {
         const filledRows = this.getFilledRows();
@@ -112,9 +111,8 @@ export class Tetris extends Component {
           this.gameOverCb?.();
           return;
         }
-
-        this.draw(ctx);
       }
+      this.draw(ctx);
     }, 1000);
   }
 
