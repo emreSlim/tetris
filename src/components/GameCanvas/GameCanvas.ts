@@ -43,6 +43,7 @@ export class GameCanvas {
 
     const start = new Text("Start", welcome.x, welcome.y + 100, 30);
     start.centered = welcome.centered;
+    start.style = "purple";
     start.draw(ctx);
     const onStartClick = () => {
       start.removeEventListener(this.node, "click", onStartClick);
@@ -63,6 +64,7 @@ export class GameCanvas {
     title.draw(ctx);
 
     const easy = new Text("Easy", this.width * (2 / 3), this.height / 4, 48);
+    easy.style = "purple";
     easy.centered = true;
     easy.draw(ctx);
 
@@ -72,6 +74,7 @@ export class GameCanvas {
       this.height / 2,
       48
     );
+    medium.style = "purple";
     medium.centered = true;
     medium.draw(ctx);
 
@@ -81,6 +84,7 @@ export class GameCanvas {
       this.height * (3 / 4),
       48
     );
+    hard.style = "purple";
     hard.centered = true;
     hard.draw(ctx);
 
@@ -118,12 +122,15 @@ export class GameCanvas {
 
   showGameOver(ctx: CanvasRenderingContext2D, score: number) {
     ctx.clearRect(0, 0, this.width, this.height);
+    ctx.fillStyle = "black";
+
     const gameover = new Text(
       "Game Over..",
       this.width / 2,
-      this.height / 2,
+      this.height / 2 - 60,
       48
     );
+
     gameover.centered = true;
 
     gameover.draw(ctx);
@@ -131,43 +138,55 @@ export class GameCanvas {
     const scoreText = new Text(
       "Score: " + score,
       this.width / 2,
-      50 + this.height / 2,
+      this.height / 2,
       64
     );
     scoreText.centered = true;
-
+    scoreText.style = "#f00";
     scoreText.draw(ctx);
+
+    const lobby = new Text("Lobby", this.width / 2, 70 + this.height / 2, 32);
+    lobby.style = "purple";
+    lobby.centered = true;
+
+    lobby.draw(ctx);
+
+    const lobbyClickCb = () => {
+      this.showIntro(ctx);
+      lobby.removeEventListener(this.node, "click", lobbyClickCb);
+    };
+
+    lobby.addEventListener(this.node, "click", lobbyClickCb);
   }
 
   private startGame(ctx: CanvasRenderingContext2D, level: number) {
-    ctx.clearRect(0, 0, this.width, this.height);
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, this.width, this.height);
     const starting = new Text(
       "Starting..",
-      this.width / 2,
+      this.width / 3,
       this.height / 2,
       48
     );
+    starting.style = "black";
     starting.centered = true;
     starting.draw(ctx);
 
     window.setTimeout(() => {
+      ctx.fillStyle = "black";
+      ctx.fillRect(0, 0, this.width, this.height);
       const game = new Tetris(
         ctx,
         this.width,
         this.height,
-        undefined,
+        this.width / Math.floor(this.width / 50),
         1000 / level
       );
-      game.play(ctx);
-      game.draw(ctx);
       game.focused = true;
-      game.attachListeners(ctx);
+
       game.onGameOver(() => {
         this.showGameOver(ctx, game.score);
         game.destroy();
-        window.setTimeout(() => {
-          this.showIntro(ctx);
-        }, 3000);
       });
     }, 1000);
   }
