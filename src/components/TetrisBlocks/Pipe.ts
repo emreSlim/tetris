@@ -2,10 +2,10 @@ import { Tetris } from "../Tetris/Tetris";
 import { Block } from ".";
 
 export class Pipe extends Block {
-  constructor(container: Tetris) {
+  constructor(container: Tetris, initC?: number) {
     const WIDTH = 1;
     const HEIGHT = 4;
-    super(container, WIDTH, HEIGHT);
+    super(container, WIDTH, HEIGHT, initC);
   }
 
   initBlock(): void {

@@ -2,10 +2,10 @@ import { Tetris } from "../Tetris/Tetris";
 import { Block } from ".";
 
 export class Square extends Block {
-  constructor(container: Tetris) {
+  constructor(container: Tetris, initC?: number) {
     const WIDTH = 2;
     const HEIGHT = 2;
-    super(container, WIDTH, HEIGHT);
+    super(container, WIDTH, HEIGHT, initC);
   }
 
   initBlock(): void {

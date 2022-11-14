@@ -8,12 +8,17 @@ export abstract class Block {
   protected container: Tetris;
   protected block: boolean[][];
 
-  constructor(container: Tetris, colCount: number, rowCount: number) {
+  constructor(
+    container: Tetris,
+    colCount: number,
+    rowCount: number,
+    initC = Math.floor(container.matrixWidth / 2)
+  ) {
     this.container = container;
     this.colCount = colCount;
     this.rowCount = rowCount;
 
-    this.c = Math.floor(container.matrixWidth / 2);
+    this.c = initC;
     this.r = -rowCount;
 
     this.initBlock();

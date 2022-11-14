@@ -15,17 +15,20 @@ export class Tetris extends Component {
   private frameDelay = 1000;
   private ctx: CanvasRenderingContext2D;
   private offsetY: number;
+  private difficulty: number;
+  private isFastForward = true;
 
   constructor(
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number,
     cellSize = 51,
-    frameDelay = 1000
+    difficulty = 1
   ) {
     super();
     this.cellSize = cellSize;
-    this.frameDelay = frameDelay;
+    this.difficulty = difficulty;
+    this.frameDelay = 700 / Math.sqrt(difficulty);
     this.ctx = ctx;
     this.width = width;
     this.height = height;
@@ -197,13 +200,19 @@ export class Tetris extends Component {
 
     //round
     ctx.beginPath();
-    ctx.arc(this.width / 2, this.height / 2.5, this.width / 14, 0, Math.PI * 2);
+    ctx.arc(this.width / 2, this.height / 2, this.width / 14, 0, Math.PI * 2);
     ctx.stroke();
   };
 
   private addRandomBlock() {
     const B = Random.item([Square, P, L, Pipe, LOpposite]);
-    this.currentBlock = new B(this);
+    this.currentBlock = new B(
+      this,
+      this.isFastForward ? Random.int(this.matrixWidth - 3) : undefined
+    );
+    Random.iterations(() => {
+      this.currentBlock.rotate();
+    });
   }
 
   private gameOverCb: CallableFunction;
@@ -235,7 +244,9 @@ export class Tetris extends Component {
 
     window.requestAnimationFrame(cb);
 
-    const timerId = window.setInterval(() => {
+    let timerId: number;
+
+    const onTick = () => {
       this.traverse((val, r, c) => {
         if (val != -1) return;
         this.ctx.fillStyle = "#bbb4";
@@ -263,7 +274,14 @@ export class Tetris extends Component {
           return;
         }
       }
-    }, this.frameDelay);
+    };
+
+    const preplayTimer = window.setInterval(onTick, this.frameDelay / 16);
+    window.setTimeout(() => {
+      window.clearInterval(preplayTimer);
+      this.isFastForward = false;
+      timerId = window.setInterval(onTick, this.frameDelay);
+    }, this.height + this.width);
   }
 
   private getFilledRows = () => {

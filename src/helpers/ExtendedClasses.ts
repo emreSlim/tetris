@@ -38,6 +38,10 @@ export class Random {
       min
     )})`;
   }
+  static iterations(cb: CallableFunction, maxCount = 10) {
+    const limit = Random.int(maxCount);
+    for (let i = 0; i < limit; i++) cb();
+  }
 }
 /**
  * Object extended functionalities

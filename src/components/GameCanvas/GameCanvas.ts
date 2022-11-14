@@ -63,7 +63,12 @@ export class GameCanvas {
     title.centered = true;
     title.draw(ctx);
 
-    const easy = new Text("Easy", this.width * (2 / 3), this.height / 4, 48);
+    const easy = new Text(
+      "Easy",
+      this.width * (2 / 3),
+      this.height * (1 / 5),
+      48
+    );
     easy.style = "purple";
     easy.centered = true;
     easy.draw(ctx);
@@ -71,7 +76,7 @@ export class GameCanvas {
     const medium = new Text(
       "Medium",
       this.width * (2 / 3),
-      this.height / 2,
+      this.height * (2 / 5),
       48
     );
     medium.style = "purple";
@@ -81,18 +86,28 @@ export class GameCanvas {
     const hard = new Text(
       "Hard",
       this.width * (2 / 3),
-      this.height * (3 / 4),
+      this.height * (3 / 5),
       48
     );
     hard.style = "purple";
     hard.centered = true;
     hard.draw(ctx);
 
+    const extraHard = new Text(
+      "ExtraHard",
+      this.width * (2 / 3),
+      this.height * (4 / 5),
+      48
+    );
+    extraHard.style = "purple";
+    extraHard.centered = true;
+    extraHard.draw(ctx);
+
     const easyCb = () => {
       this.startGame(ctx, 1);
       easy.style = "#f00";
       easy.draw(ctx);
-      [[easy, easyCb] as any, [medium, mediumCb], [hard, hardCb]].forEach((t) =>
+      cbArray.forEach((t) =>
         t[0].removeEventListener(this.node, "click", t[1])
       );
     };
@@ -101,7 +116,7 @@ export class GameCanvas {
       this.startGame(ctx, 2);
       medium.style = "#f00";
       medium.draw(ctx);
-      [[easy, easyCb] as any, [medium, mediumCb], [hard, hardCb]].forEach((t) =>
+      cbArray.forEach((t) =>
         t[0].removeEventListener(this.node, "click", t[1])
       );
     };
@@ -110,14 +125,31 @@ export class GameCanvas {
       this.startGame(ctx, 3);
       hard.style = "#f00";
       hard.draw(ctx);
-      [[easy, easyCb] as any, [medium, mediumCb], [hard, hardCb]].forEach((t) =>
+      cbArray.forEach((t) =>
         t[0].removeEventListener(this.node, "click", t[1])
       );
     };
 
+    const extraHardCb = () => {
+      this.startGame(ctx, 4);
+      extraHard.style = "#f00";
+      extraHard.draw(ctx);
+      cbArray.forEach((t) =>
+        t[0].removeEventListener(this.node, "click", t[1])
+      );
+    };
+
+    const cbArray = [
+      [easy, easyCb] as any,
+      [medium, mediumCb],
+      [hard, hardCb],
+      [extraHard, extraHardCb],
+    ];
+
     easy.addEventListener(this.node, "click", easyCb);
     medium.addEventListener(this.node, "click", mediumCb);
     hard.addEventListener(this.node, "click", hardCb);
+    extraHard.addEventListener(this.node, "click", extraHardCb);
   };
 
   showGameOver(ctx: CanvasRenderingContext2D, score: number) {
@@ -180,9 +212,8 @@ export class GameCanvas {
         this.width,
         this.height,
         this.width / Math.floor(this.width / 50),
-        1000 / level
+        level
       );
-      game.focused = true;
 
       game.onGameOver(() => {
         this.showGameOver(ctx, game.score);
