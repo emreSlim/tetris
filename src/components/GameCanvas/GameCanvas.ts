@@ -18,7 +18,7 @@ export class GameCanvas {
     return this.node.height;
   }
 
-  onGameOver = () => {};
+  onGameOver = (score: number) => {};
   public startGame() {
     this.ctx.fillStyle = "white";
     this.ctx.fillRect(0, 0, this.width, this.height);
@@ -45,7 +45,7 @@ export class GameCanvas {
       this.node.addEventListener("pointerdown", game.onPointerDown);
 
       game.onGameOver(() => {
-        this.onGameOver();
+        this.onGameOver(game.score);
       });
     }, 1000);
   }
