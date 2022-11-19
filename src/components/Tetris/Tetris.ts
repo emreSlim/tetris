@@ -1,4 +1,4 @@
-import { Random, Debouncer } from "../../helpers";
+import { Random } from "../../helpers";
 import { Component } from "../Component";
 import { Text } from "../Text/Text";
 import { Block, L, LOpposite, P, Pipe, Square } from "../TetrisBlocks";
@@ -12,23 +12,18 @@ export class Tetris extends Component {
   readonly cellSize: number; //1 pixel for gap
   private currentBlock: Block;
   public score = 0;
-  private frameDelay = 1000;
-  private ctx: CanvasRenderingContext2D;
-  private offsetY: number;
-  private difficulty: number;
-  private isFastForward = true;
-
+  public frameDelay = 500;
+  public ctx: CanvasRenderingContext2D;
+  public offsetY: number;
+  public cellGap = 4;
   constructor(
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number,
-    cellSize = 51,
-    difficulty = 1
+    cellSize = 51
   ) {
     super();
     this.cellSize = cellSize;
-    this.difficulty = difficulty;
-    this.frameDelay = 700 / Math.sqrt(difficulty);
     this.ctx = ctx;
     this.width = width;
     this.height = height;
@@ -38,7 +33,6 @@ export class Tetris extends Component {
     this.matrix = new Array(this.matrixHeight);
     this.offsetY = (this.height - this.cellSize * this.matrixHeight) / 2;
     this.fillMatrix();
-    this.attachListeners();
     this.play();
   }
 
@@ -46,14 +40,7 @@ export class Tetris extends Component {
     return c >= 0 && c < this.matrixWidth && r >= 0 && r < this.matrixHeight;
   }
 
-  public destroy() {
-    window.removeEventListener("keydown", this.onKeyDown);
-    document.removeEventListener("pointerdown", this.onPointerDown);
-
-    document.removeEventListener("dblclick", this.onDblClick);
-  }
-
-  private onKeyDown = (e: KeyboardEvent) => {
+  public onKeyDown = (e: KeyboardEvent) => {
     if (e.key === "ArrowLeft") {
       this.currentBlock.moveLeft();
     }
@@ -63,47 +50,30 @@ export class Tetris extends Component {
     if (e.key == "ArrowDown") {
       this.currentBlock.moveDown();
     }
-    if (e.key == " ") {
+    if (e.key === "ArrowUp") {
       this.currentBlock.rotate();
+    }
+    if (e.key == " ") {
+      let moveDownBy =
+        this.matrixHeight - (this.currentBlock.r + this.currentBlock.rowCount);
+      let moved = false;
+      do {
+        moved = this.currentBlock.moveDown(moveDownBy);
+        if (moved) break;
+        moveDownBy--;
+      } while (!moved && moveDownBy > 0);
+      console.log({ moved });
     }
 
     this.draw(this.ctx);
   };
 
-  private attachListeners() {
-    window.addEventListener("keydown", this.onKeyDown);
-
-    // const guestureCB = new Debouncer((e: PointerEvent) => {
-    //   if (e.movementX > 0) {
-    //     this.currentBlock.moveRight();
-    //   }
-    //   if (e.movementX < 0) {
-    //     this.currentBlock.moveLeft();
-    //   }
-    //   if (e.movementY > 0) {
-    //     this.currentBlock.moveDown();
-    //   }
-    //   this.draw(ctx);
-    // }, 100).schedule;
-
-    // document.addEventListener("pointerdown", () => {
-    //   window.addEventListener("pointermove", guestureCB);
-    // });
-    // document.addEventListener("pointerup", () => {
-    //   window.removeEventListener("pointermove", guestureCB);
-    // });
-
-    document.addEventListener("pointerdown", this.onPointerDown);
-
-    document.addEventListener("dblclick", this.onDblClick);
-  }
-
-  private onPointerDown = (e: PointerEvent) => {
-    if (e.clientX > this.width * (3 / 4)) {
+  public onPointerDown = (e: PointerEvent) => {
+    if (e.offsetX > this.width * (3 / 4)) {
       this.currentBlock.moveRight();
-    } else if (e.clientX < this.width / 4) {
+    } else if (e.offsetX < this.width / 4) {
       this.currentBlock.moveLeft();
-    } else if (e.clientY > this.height * (3 / 4)) {
+    } else if (e.offsetY > this.height * (3 / 4)) {
       this.currentBlock.moveDown();
     } else {
       this.currentBlock.rotate();
@@ -111,7 +81,6 @@ export class Tetris extends Component {
 
     this.draw(this.ctx);
   };
-  private onDblClick = (e: PointerEvent) => {};
 
   private fillMatrix() {
     for (let r = 0; r < this.matrixHeight; r++) {
@@ -136,21 +105,31 @@ export class Tetris extends Component {
   }
 
   protected _draw(ctx: CanvasRenderingContext2D): void {
+    ctx.clearRect(0, 0, this.width, this.height);
+
+    this.traverse((val, r, c) => {
+      if (val > 0) return;
+      ctx.fillStyle = "#bbb4 ";
+      this.fillCell(r, c, 0, this.offsetY);
+    });
     this.displayArrows(ctx);
     this.displayScore(ctx);
+
     this.traverse((val, r, c) => {
-      ctx.fillStyle =
-        val == 2 ? "#f003" : val == 1 ? "#0f03" : val == 0 ? "#00f3" : "#bbb2";
-      this.fillCell(r, c);
+      if (val === -1 || val === 0) return;
+      ctx.fillStyle = val == 2 ? "#f00" : val == 1 ? "#0f0" : "#bbb4 ";
+      this.fillCell(r, c, 0, this.offsetY);
     });
+
+    this.currentBlock.draw(ctx);
   }
 
   private displayScore = (ctx: CanvasRenderingContext2D) => {
     const score = new Text(
       "Score:" + this.score,
       this.cellSize,
-      this.offsetY + (this.cellSize * 3) / 4,
-      48
+      this.offsetY + this.cellSize,
+      this.cellSize
     );
     score.style = "#00000080";
     score.draw(ctx);
@@ -158,7 +137,7 @@ export class Tetris extends Component {
 
   private displayArrows = (ctx: CanvasRenderingContext2D) => {
     //arrow right
-    ctx.strokeStyle = "#00000003";
+    ctx.strokeStyle = "#00000010";
     ctx.lineWidth = this.cellSize;
 
     {
@@ -206,13 +185,7 @@ export class Tetris extends Component {
 
   private addRandomBlock() {
     const B = Random.item([Square, P, L, Pipe, LOpposite]);
-    this.currentBlock = new B(
-      this,
-      this.isFastForward ? Random.int(this.matrixWidth - 3) : undefined
-    );
-    Random.iterations(() => {
-      this.currentBlock.rotate();
-    });
+    this.currentBlock = new B(this, undefined);
   }
 
   private gameOverCb: CallableFunction;
@@ -221,12 +194,17 @@ export class Tetris extends Component {
     this.gameOverCb = cb;
   }
 
-  private fillCell = (r: number, c: number) => {
+  public fillCell = (
+    r: number,
+    c: number,
+    offsetX: number,
+    offsetY: number
+  ) => {
     this.ctx.fillRect(
-      c * this.cellSize,
-      r * this.cellSize + this.offsetY,
-      this.cellSize - 4,
-      this.cellSize - 4
+      c * this.cellSize + offsetX,
+      r * this.cellSize + offsetY,
+      this.cellSize - this.cellGap,
+      this.cellSize - this.cellGap
     );
   };
 
@@ -244,14 +222,10 @@ export class Tetris extends Component {
 
     window.requestAnimationFrame(cb);
 
-    let timerId: number;
+    let mainTimer: number;
+    let count = 0;
 
     const onTick = () => {
-      this.traverse((val, r, c) => {
-        if (val != -1) return;
-        this.ctx.fillStyle = "#bbb4";
-        this.fillCell(r, c);
-      });
       const fallen = !this.currentBlock.moveDown();
 
       if (fallen) {
@@ -266,22 +240,25 @@ export class Tetris extends Component {
         this.currentBlock.freeze();
 
         this.addRandomBlock();
-        const newBlockFallen = this.currentBlock.moveDown();
-        if (!newBlockFallen) {
+        count++;
+        const blockMoveable = this.currentBlock.moveDown();
+        if (!blockMoveable) {
           requestFrame = false;
-          window.clearInterval(timerId);
+          window.clearInterval(mainTimer);
           this.gameOverCb?.();
           return;
         }
       }
+
+      if (count > 32) {
+        window.clearInterval(mainTimer);
+        this.frameDelay *= 0.9;
+        count = 0;
+        mainTimer = window.setInterval(onTick, this.frameDelay);
+      }
     };
 
-    const preplayTimer = window.setInterval(onTick, this.frameDelay / 16);
-    window.setTimeout(() => {
-      window.clearInterval(preplayTimer);
-      this.isFastForward = false;
-      timerId = window.setInterval(onTick, this.frameDelay);
-    }, this.height + this.width);
+    mainTimer = window.setInterval(onTick, this.frameDelay);
   }
 
   private getFilledRows = () => {

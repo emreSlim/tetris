@@ -1,12 +1,20 @@
+import { NumberE } from "../../helpers/ExtendedClasses";
 import { Tetris } from "../Tetris/Tetris";
 
 export abstract class Block {
-  protected c = 0;
-  protected r = 0;
-  protected rowCount: number;
-  protected colCount: number;
+  public c = 0;
+  public r = 0;
+  protected x = 0;
+  protected y = 0;
+  public rowCount: number;
+  public colCount: number;
   protected container: Tetris;
   protected block: boolean[][];
+  private vh = 0; // per milisecond;
+  private vv = 0; // per milisecond
+  private rotation = 0;
+  private rotationAnimative = 0;
+  private rotationSpeed = 10; // degrees per frame
 
   constructor(
     container: Tetris,
@@ -21,8 +29,75 @@ export abstract class Block {
     this.c = initC;
     this.r = -rowCount;
 
+    this.x = this.c * container.cellSize;
+    this.y = this.r * container.cellSize;
+
     this.initBlock();
     this.write();
+  }
+
+  private timeStamp: number;
+
+  animateRotation() {
+    if (this.rotationAnimative < this.rotation) {
+      this.rotationAnimative += this.rotationSpeed;
+      if (this.rotationAnimative > this.rotation)
+        this.rotationAnimative = this.rotation;
+    }
+  }
+
+  animatePosition(tx: number, ty: number) {
+    const now = Date.now();
+    if (this.x !== tx) {
+      this.vh = tx < this.x ? -Math.abs(this.vh) : Math.abs(this.vh);
+      this.x += this.vh * (now - this.timeStamp);
+      if ((this.vh > 0 && this.x > tx) || (this.vh < 0 && this.x < tx)) {
+        this.x = tx;
+      }
+    }
+
+    if (this.y !== ty) {
+      this.vv = ty < this.y ? -Math.abs(this.vv) : Math.abs(this.vv);
+      this.y += this.vv * (now - this.timeStamp);
+      if ((this.vv > 0 && this.y > ty) || (this.vv < 0 && this.y < ty))
+        this.y = ty;
+    }
+    this.timeStamp = now;
+  }
+
+  draw(ctx: CanvasRenderingContext2D) {
+    ctx.save();
+    ctx.fillStyle = "#00f";
+
+    if (this.rotation !== this.rotationAnimative) {
+      ctx.translate(
+        this.x + (this.colCount * this.container.cellSize) / 2,
+        this.y + (this.rowCount * this.container.cellSize) / 2
+      );
+      this.animateRotation();
+      ctx.rotate((this.rotationAnimative - this.rotation) * (Math.PI / 180));
+      ctx.translate(
+        -(this.x + (this.colCount * this.container.cellSize) / 2),
+        -(this.y + (this.rowCount * this.container.cellSize) / 2)
+      );
+    }
+
+    this.animatePosition(
+      this.c * this.container.cellSize,
+      this.r * this.container.cellSize
+    );
+    for (let r = 0; r < this.rowCount; r++) {
+      for (let c = 0; c < this.colCount; c++) {
+        if (this.block[r][c] === false) continue;
+        ctx.fillRect(
+          this.x + c * this.container.cellSize,
+          this.y + r * this.container.cellSize + this.container.offsetY,
+          this.container.cellSize - this.container.cellGap,
+          this.container.cellSize - this.container.cellGap
+        );
+      }
+    }
+    ctx.restore();
   }
 
   freeze() {
@@ -56,15 +131,35 @@ export abstract class Block {
     this.rowCount = this.colCount;
     this.colCount = tempH;
 
-    if (this.colCount + this.c >= this.container.matrixWidth) {
-      this.c = this.container.matrixWidth - this.colCount;
+    {
+      const f = this.rotation % 180 === 0 ? Math.floor : Math.ceil;
+
+      const differC = f((this.rowCount - this.colCount) / 2);
+      const differR = f((this.colCount - this.rowCount) / 2);
+
+      this.c += differC;
+      this.r += differR;
     }
 
-    if (this.rowCount + this.r >= this.container.matrixHeight) {
-      this.r = this.container.matrixHeight - this.rowCount;
+    {
+      //prevent from going out of frame
+      if (this.colCount + this.c >= this.container.matrixWidth) {
+        this.c = this.container.matrixWidth - this.colCount;
+      }
+      //prevent from going out of frame
+      if (this.rowCount + this.r >= this.container.matrixHeight) {
+        this.r = this.container.matrixHeight - this.rowCount;
+      }
     }
+
+    this.rotation += 90;
+
+    this.rotationSpeed = (this.rotation - this.rotationAnimative) / 9;
 
     this.write();
+
+    this.updateVH();
+    this.updateVV();
   }
 
   protected traverse(
@@ -150,11 +245,16 @@ export abstract class Block {
     }
   }
 
+  updateVH() {
+    this.vh = Math.abs(this.x - this.c * this.container.cellSize) / 100;
+  }
+
   moveLeft() {
     if (this.scanHorizontalNeighbours(-1)) {
       this.erase();
       this.c -= 1;
       this.write();
+      this.updateVH();
       return true;
     }
     return false;
@@ -164,24 +264,35 @@ export abstract class Block {
       this.erase();
       this.c += 1;
       this.write();
+      this.updateVH();
       return true;
     }
     return false;
   }
-  moveDown() {
-    if (this.scanVerticalNeighbours(1)) {
+
+  updateVV() {
+    this.vv =
+      Math.abs(this.y - this.r * this.container.cellSize) /
+      this.container.frameDelay;
+  }
+  moveDown(by = 1) {
+    if (this.scanVerticalNeighbours(by)) {
+      if (!this.timeStamp) this.timeStamp = Date.now();
       this.erase();
-      this.r += 1;
+      this.r += by;
       this.write();
+      this.updateVV();
       return true;
     }
     return false;
   }
+
   moveUp() {
     if (this.scanVerticalNeighbours(-1)) {
       this.erase();
       this.r -= 1;
       this.write();
+      this.updateVV();
       return true;
     }
     return false;

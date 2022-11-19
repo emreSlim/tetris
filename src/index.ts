@@ -1,7 +1,13 @@
 import { GameCanvas } from "./components/GameCanvas/GameCanvas";
-import { Tetris } from "./components/Tetris/Tetris";
 import "./style.css";
 
-const canvas = new GameCanvas(window.innerWidth, window.innerHeight);
+const game = new GameCanvas(512, 512);
 
-document.body.appendChild(canvas.node);
+const container = document.createElement("div");
+container.classList.add("main-container");
+
+container.appendChild(game.node);
+
+game.startGame();
+
+document.body.appendChild(container);
