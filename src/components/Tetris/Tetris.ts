@@ -1,7 +1,7 @@
 import { Random } from "../../helpers";
 import { Component } from "../Component";
 import { Text } from "../Text/Text";
-import { Block, L, LOpposite, P, Pipe, Square } from "../TetrisBlocks";
+import { Block, L, J, P, I, O, S, Z } from "../TetrisBlocks";
 
 export class Tetris extends Component {
   readonly matrix: number[][]; // -1 = space; 0 = moving; 1 = about to clear; 2 = filled
@@ -184,7 +184,7 @@ export class Tetris extends Component {
   };
 
   private addRandomBlock() {
-    const B = Random.item([Square, P, L, Pipe, LOpposite]);
+    const B = Random.item([O, P, L, I, J, S, Z]);
     this.currentBlock = new B(this, undefined);
   }
 

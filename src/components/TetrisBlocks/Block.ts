@@ -117,7 +117,7 @@ export abstract class Block {
   rotate() {
     this.erase();
     const newBlock: boolean[][] = new Array();
-    this.block.forEach(() => {
+    this.block[0].forEach(() => {
       newBlock.push(new Array());
     });
     for (let r = 0; r < this.rowCount; r++) {
@@ -139,6 +139,9 @@ export abstract class Block {
 
       this.c += differC;
       this.r += differR;
+
+      if (this.c < 0) this.c = 0;
+      if (this.r < 0) this.r = 0;
     }
 
     {
