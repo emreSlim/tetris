@@ -276,6 +276,7 @@ export abstract class Block {
       Math.abs(this.y - this.r * this.container.cellSize) /
       this.container.frameDelay;
   }
+
   moveDown(by = 1) {
     if (this.scanVerticalNeighbours(by)) {
       if (!this.timeStamp) this.timeStamp = Date.now();
@@ -283,6 +284,7 @@ export abstract class Block {
       this.r += by;
       this.write();
       this.updateVV();
+
       return true;
     }
     return false;

@@ -5,7 +5,7 @@ document.body.onload = () => {
   const container = document.createElement("div");
   container.classList.add("main-container");
 
-  const size = Math.min(window.innerHeight, window.innerWidth);
+  const size = Math.min(window.innerHeight, window.innerWidth) - 40;
 
   const game = new GameCanvas(size, size);
   container.appendChild(game.node);
@@ -49,3 +49,7 @@ document.body.onload = () => {
 
   document.body.appendChild(container);
 };
+
+// window.onclick = () => {
+//   const audio = new Audio(Bu)
+// }

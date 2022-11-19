@@ -2,6 +2,7 @@ import { NumberE, Random } from "../../helpers";
 import { Component } from "../Component";
 import { Text } from "../Text/Text";
 import { Block, L, J, P, I, O, S, Z } from "../TetrisBlocks";
+import { CustomAudio } from "../CustomAudio/CustomAudio";
 
 export class Tetris extends Component {
   readonly matrix: number[][]; // -1 = space; 0 = moving; 1 = about to clear; 2 = filled
@@ -49,6 +50,12 @@ export class Tetris extends Component {
     this.play();
   }
 
+  public setVolume(vol: number) {
+    this.soundEffects.forEach((s) =>
+      vol === 0 ? s.mute() : (s.audio.volume = vol)
+    );
+  }
+
   public isLegalCell(r: number, c: number) {
     return c >= 0 && c < this.matrixWidth && r >= 0 && r < this.matrixHeight;
   }
@@ -75,7 +82,6 @@ export class Tetris extends Component {
         if (moved) break;
         moveDownBy--;
       } while (!moved && moveDownBy > 0);
-      console.log({ moved });
     }
 
     this.draw(this.ctx);
@@ -234,6 +240,12 @@ export class Tetris extends Component {
     );
   };
 
+  soundEffects = [
+    new CustomAudio("felldown.m4a"),
+    new CustomAudio("clearRows.m4a"),
+    new CustomAudio("gameover.m4a"),
+  ];
+
   public play() {
     this.fillMatrix();
     this.addRandomBlock();
@@ -258,10 +270,12 @@ export class Tetris extends Component {
         const filledRows = this.getFilledRows();
         if (filledRows.length > 0) {
           this.setFilledRows(filledRows);
-
+          this.soundEffects[1].replay();
           window.setTimeout(() => {
             this.clearFilledRows(filledRows);
           }, this.frameDelay / 2);
+        } else {
+          this.soundEffects[0].replay();
         }
         this.currentBlock.freeze();
 
@@ -271,6 +285,7 @@ export class Tetris extends Component {
         if (!blockMoveable) {
           requestFrame = false;
           window.clearInterval(mainTimer);
+          this.soundEffects[2].replay(1);
           this.gameOverCb?.();
           return;
         }

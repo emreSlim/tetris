@@ -19,6 +19,8 @@ export class GameCanvas {
   }
 
   onGameOver = (score: number) => {};
+  setVolume = (vol: number) => {};
+
   public startGame() {
     this.ctx.fillStyle = "white";
     this.ctx.fillRect(0, 0, this.width, this.height);
@@ -39,7 +41,7 @@ export class GameCanvas {
         this.height,
         this.width / 16
       );
-
+      this.setVolume = game.setVolume;
       window.addEventListener("keydown", game.onKeyDown);
 
       this.node.addEventListener("pointerdown", game.onPointerDown);
