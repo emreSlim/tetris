@@ -1,4 +1,4 @@
-import { Random } from "../../helpers";
+import { NumberE, Random } from "../../helpers";
 import { Component } from "../Component";
 import { Text } from "../Text/Text";
 import { Block, L, J, P, I, O, S, Z } from "../TetrisBlocks";
@@ -16,6 +16,19 @@ export class Tetris extends Component {
   public ctx: CanvasRenderingContext2D;
   public offsetY: number;
   public cellGap = 4;
+  private level = 1;
+  private levelColors = [
+    "#bbbbbb40",
+    "#b2c3dd40",
+    "#b2b8dd40",
+    "#b9b2dd40",
+    "#c6b2dd40",
+    "#d9b2dd40",
+    "#ddb2d640",
+    "#ddb2c040",
+    "#ddc9b240",
+    "#dddcb240",
+  ];
   constructor(
     ctx: CanvasRenderingContext2D,
     width: number,
@@ -106,10 +119,11 @@ export class Tetris extends Component {
 
   protected _draw(ctx: CanvasRenderingContext2D): void {
     ctx.clearRect(0, 0, this.width, this.height);
-
+    ctx.fillStyle =
+      this.levelColors[(this.level - 1) % this.levelColors.length];
     this.traverse((val, r, c) => {
       if (val > 0) return;
-      ctx.fillStyle = "#bbb4 ";
+
       this.fillCell(r, c, 0, this.offsetY);
     });
     this.displayArrows(ctx);
@@ -133,6 +147,18 @@ export class Tetris extends Component {
     );
     score.style = "#00000080";
     score.draw(ctx);
+
+    const multiplier = new Text(
+      NumberE.roundToPrecision(500 / this.frameDelay, 1) + "x",
+      this.width - this.cellSize,
+      this.offsetY + this.cellSize,
+      this.cellSize
+    );
+    multiplier.x =
+      this.width - this.cellSize * 2 - ctx.measureText(multiplier.text).width;
+
+    multiplier.style = "#00000080";
+    multiplier.draw(ctx);
   };
 
   private displayArrows = (ctx: CanvasRenderingContext2D) => {
@@ -211,6 +237,7 @@ export class Tetris extends Component {
   public play() {
     this.fillMatrix();
     this.addRandomBlock();
+    let count = 1;
     this.draw(this.ctx);
     let requestFrame = true;
     const cb = () => {
@@ -223,7 +250,6 @@ export class Tetris extends Component {
     window.requestAnimationFrame(cb);
 
     let mainTimer: number;
-    let count = 0;
 
     const onTick = () => {
       const fallen = !this.currentBlock.moveDown();
@@ -250,9 +276,10 @@ export class Tetris extends Component {
         }
       }
 
-      if (count > 32) {
+      if (count > 16) {
+        this.level++;
         window.clearInterval(mainTimer);
-        this.frameDelay *= 0.9;
+        this.frameDelay *= 0.85;
         count = 0;
         mainTimer = window.setInterval(onTick, this.frameDelay);
       }

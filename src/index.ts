@@ -5,7 +5,9 @@ document.body.onload = () => {
   const container = document.createElement("div");
   container.classList.add("main-container");
 
-  const game = new GameCanvas(512, 512);
+  const size = Math.min(window.innerHeight, window.innerWidth);
+
+  const game = new GameCanvas(size, size);
   container.appendChild(game.node);
   game.node.hidden = true;
 
