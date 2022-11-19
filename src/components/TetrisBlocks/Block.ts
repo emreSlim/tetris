@@ -1,4 +1,3 @@
-import { NumberE } from "../../helpers/ExtendedClasses";
 import { Tetris } from "../Tetris/Tetris";
 
 export abstract class Block {
@@ -12,9 +11,9 @@ export abstract class Block {
   protected block: boolean[][];
   private vh = 0; // per milisecond;
   private vv = 0; // per milisecond
-  private rotation = 0;
-  private rotationAnimative = 0;
-  private rotationSpeed = 10; // degrees per frame
+  private rotationTarget = 0; //in degrees
+  private rotationCurrent = 0; //in degrees
+  private rotationSpeed = 9 / 20; // degrees per ms
 
   constructor(
     container: Tetris,
@@ -38,15 +37,7 @@ export abstract class Block {
 
   private timeStamp: number;
 
-  animateRotation() {
-    if (this.rotationAnimative < this.rotation) {
-      this.rotationAnimative += this.rotationSpeed;
-      if (this.rotationAnimative > this.rotation)
-        this.rotationAnimative = this.rotation;
-    }
-  }
-
-  animatePosition(tx: number, ty: number) {
+  onTick(tx: number, ty: number) {
     const now = Date.now();
     if (this.x !== tx) {
       this.vh = tx < this.x ? -Math.abs(this.vh) : Math.abs(this.vh);
@@ -62,6 +53,13 @@ export abstract class Block {
       if ((this.vv > 0 && this.y > ty) || (this.vv < 0 && this.y < ty))
         this.y = ty;
     }
+
+    if (this.rotationCurrent < this.rotationTarget) {
+      this.rotationCurrent += this.rotationSpeed * (now - this.timeStamp);
+      if (this.rotationCurrent > this.rotationTarget)
+        this.rotationCurrent = this.rotationTarget;
+    }
+
     this.timeStamp = now;
   }
 
@@ -69,23 +67,25 @@ export abstract class Block {
     ctx.save();
     ctx.fillStyle = "#00f";
 
-    if (this.rotation !== this.rotationAnimative) {
+    this.onTick(
+      this.c * this.container.cellSize,
+      this.r * this.container.cellSize
+    );
+
+    if (this.rotationTarget !== this.rotationCurrent) {
       ctx.translate(
         this.x + (this.colCount * this.container.cellSize) / 2,
         this.y + (this.rowCount * this.container.cellSize) / 2
       );
-      this.animateRotation();
-      ctx.rotate((this.rotationAnimative - this.rotation) * (Math.PI / 180));
+      ctx.rotate(
+        (this.rotationCurrent - this.rotationTarget) * (Math.PI / 180)
+      );
       ctx.translate(
         -(this.x + (this.colCount * this.container.cellSize) / 2),
         -(this.y + (this.rowCount * this.container.cellSize) / 2)
       );
     }
 
-    this.animatePosition(
-      this.c * this.container.cellSize,
-      this.r * this.container.cellSize
-    );
     for (let r = 0; r < this.rowCount; r++) {
       for (let c = 0; c < this.colCount; c++) {
         if (this.block[r][c] === false) continue;
@@ -114,7 +114,7 @@ export abstract class Block {
 
   abstract initBlock(): void;
 
-  rotate(antiClockwise?: boolean) {
+  rotate() {
     this.erase();
     const newBlock: boolean[][] = new Array();
     this.block.forEach(() => {
@@ -132,7 +132,7 @@ export abstract class Block {
     this.colCount = tempH;
 
     {
-      const f = this.rotation % 180 === 0 ? Math.floor : Math.ceil;
+      const f = this.rotationTarget % 180 === 0 ? Math.floor : Math.ceil;
 
       const differC = f((this.rowCount - this.colCount) / 2);
       const differR = f((this.colCount - this.rowCount) / 2);
@@ -152,12 +152,10 @@ export abstract class Block {
       }
     }
 
-    this.rotation += 90;
-
-    this.rotationSpeed = (this.rotation - this.rotationAnimative) / 9;
-
     this.write();
 
+    this.rotationTarget += 90;
+    this.rotationSpeed = (this.rotationTarget - this.rotationCurrent) / 200;
     this.updateVH();
     this.updateVV();
   }
