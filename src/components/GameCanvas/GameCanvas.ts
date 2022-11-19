@@ -37,7 +37,7 @@ export class GameCanvas {
         this.ctx,
         this.width,
         this.height,
-        this.width / Math.floor(this.width / 32)
+        this.width / 16
       );
 
       window.addEventListener("keydown", game.onKeyDown);
