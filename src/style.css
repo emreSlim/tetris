@@ -7,10 +7,10 @@ body{
 html {
     height: 100%;
     touch-action: manipulation;
-
   }
 
 .main-container{
+    position: absolute;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -26,3 +26,8 @@ button {
     color:#fff;
 }
 
+.volume-icon{
+     position: absolute; 
+     z-index: 10;
+    transform: translate(20px, 20px); 
+}

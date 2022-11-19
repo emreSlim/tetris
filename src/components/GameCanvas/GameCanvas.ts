@@ -19,7 +19,7 @@ export class GameCanvas {
   }
 
   onGameOver = (score: number) => {};
-  setVolume = (vol: number) => {};
+  setVolume(vol: number) {}
 
   public startGame() {
     this.ctx.fillStyle = "white";

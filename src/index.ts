@@ -48,8 +48,23 @@ document.body.onload = () => {
   container.appendChild(start);
 
   document.body.appendChild(container);
-};
 
-// window.onclick = () => {
-//   const audio = new Audio(Bu)
-// }
+  const volumeIcon = new Image(50, 50);
+  volumeIcon.classList.add("volume-icon");
+  volumeIcon.src = require("./assets/images/volume-up.png").default;
+  let is = true;
+
+  volumeIcon.onclick = () => {
+    is = !is;
+
+    game.setVolume(is ? 1 : 0);
+
+    volumeIcon.src = require(`./assets/images/volume-${
+      is ? "up" : "off"
+    }.png`).default;
+  };
+
+  volumeIcon.onload = () => {
+    document.body.appendChild(volumeIcon);
+  };
+};

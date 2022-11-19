@@ -30,6 +30,11 @@ export class Tetris extends Component {
     "#ddc9b240",
     "#dddcb240",
   ];
+  soundEffects = [
+    new CustomAudio("felldown.m4a"),
+    new CustomAudio("clearRows.m4a"),
+    new CustomAudio("gameover.m4a"),
+  ];
   constructor(
     ctx: CanvasRenderingContext2D,
     width: number,
@@ -50,11 +55,9 @@ export class Tetris extends Component {
     this.play();
   }
 
-  public setVolume(vol: number) {
-    this.soundEffects.forEach((s) =>
-      vol === 0 ? s.mute() : (s.audio.volume = vol)
-    );
-  }
+  public setVolume = (vol: number) => {
+    this.soundEffects.forEach((s) => (vol === 0 ? s.mute() : s.unmute()));
+  };
 
   public isLegalCell(r: number, c: number) {
     return c >= 0 && c < this.matrixWidth && r >= 0 && r < this.matrixHeight;
@@ -239,12 +242,6 @@ export class Tetris extends Component {
       this.cellSize - this.cellGap
     );
   };
-
-  soundEffects = [
-    new CustomAudio("felldown.m4a"),
-    new CustomAudio("clearRows.m4a"),
-    new CustomAudio("gameover.m4a"),
-  ];
 
   public play() {
     this.fillMatrix();

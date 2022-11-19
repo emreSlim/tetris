@@ -15,4 +15,7 @@ export class CustomAudio {
   mute() {
     this.isMuted = true;
   }
+  unmute() {
+    this.isMuted = false;
+  }
 }
