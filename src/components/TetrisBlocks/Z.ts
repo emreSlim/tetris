@@ -3,8 +3,8 @@ import { Block } from ".";
 
 export class Z extends Block {
   constructor(container: Tetris, initC?: number) {
-    const WIDTH = 2;
-    const HEIGHT = 3;
+    const WIDTH = 3;
+    const HEIGHT = 2;
     super(container, WIDTH, HEIGHT, initC);
   }
   initBlock(): void {
