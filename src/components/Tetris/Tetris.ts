@@ -309,6 +309,8 @@ export class Tetris extends Component {
   };
 
   public play = () => {
+    if (this.isPlaying) return;
+
     window.addEventListener("keydown", this.onKeyDown);
     this.canvas.addEventListener("pointerdown", this.onPointerDown);
 

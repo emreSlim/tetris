@@ -16,7 +16,7 @@ document.body.onload = () => {
 
   start.onclick = () => {
     game.startGame();
-    playpause.hidden = false;
+    pause.hidden = false;
     start.hidden = true;
     game.canvas.hidden = false;
   };
@@ -43,7 +43,7 @@ document.body.onload = () => {
   game.onGameOver(() => {
     game.canvas.hidden = true;
     gameover.hidden = false;
-    playpause.hidden = true;
+    pause.hidden = true;
     score.innerText = "Score: " + game.score;
   });
 
@@ -51,39 +51,59 @@ document.body.onload = () => {
 
   document.body.appendChild(container);
 
-  const volumeIcon = new Image(50, 50);
-  volumeIcon.classList.add("volume-icon");
-  volumeIcon.src = require("./assets/images/volume-up.png").default;
-  let isVolOn = true;
+  const volIsOnIcon = new Image(50, 50);
+  volIsOnIcon.classList.add("volume-icon");
+  volIsOnIcon.src = require("./assets/images/volume-up.png").default;
 
-  volumeIcon.onclick = () => {
-    isVolOn = !isVolOn;
-    game.setVolume(isVolOn ? 1 : 0);
-    volumeIcon.src = require(`./assets/images/volume-${
-      isVolOn ? "up" : "off"
-    }.png`).default;
+  volIsOnIcon.onclick = () => {
+    game.setVolume(0);
+    volIsOnIcon.hidden = true;
+    volIsOffIcon.hidden = false;
+  };
+  volIsOnIcon.onload = () => {
+    document.body.appendChild(volIsOnIcon);
   };
 
-  volumeIcon.onload = () => {
-    document.body.appendChild(volumeIcon);
+  const volIsOffIcon = new Image(50, 50);
+  volIsOffIcon.classList.add("volume-icon");
+  volIsOffIcon.src = require("./assets/images/volume-off.png").default;
+  volIsOffIcon.hidden = true;
+
+  volIsOffIcon.onclick = () => {
+    game.setVolume(1);
+    volIsOffIcon.hidden = true;
+    volIsOnIcon.hidden = false;
   };
 
-  const playpause = new Image(50, 50);
-  playpause.classList.add("pause-icon");
-  playpause.src = require("./assets/images/pause.png").default;
-  playpause.hidden = true;
-
-  playpause.onclick = () => {
-    game.isPlaying ? game.pause() : game.play();
-
-    playpause.src = require(`./assets/images/${
-      game.isPlaying ? "pause" : "play"
-    }.png`).default;
-    playpause.title = game.isPlaying ? "pause" : "play";
+  volIsOffIcon.onload = () => {
+    document.body.appendChild(volIsOffIcon);
   };
 
-  playpause.onload = () => {
-    document.body.appendChild(playpause);
+  const pause = new Image(50, 50);
+  pause.classList.add("pause-icon");
+  pause.src = require("./assets/images/pause.png").default;
+  pause.hidden = true;
+  pause.onclick = () => {
+    game.pause();
+    pause.hidden = true;
+    play.hidden = false;
+  };
+  pause.onload = () => {
+    document.body.appendChild(pause);
+  };
+
+  const play = new Image(50, 50);
+  play.classList.add("pause-icon");
+  play.src = require("./assets/images/play.png").default;
+  play.hidden = true;
+  play.onclick = () => {
+    game.play();
+    play.hidden = true;
+    pause.hidden = false;
+  };
+
+  play.onload = () => {
+    document.body.appendChild(play);
   };
 
   document.addEventListener(
