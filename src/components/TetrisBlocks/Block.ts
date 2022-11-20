@@ -3,8 +3,8 @@ import { Tetris } from "../Tetris/Tetris";
 export abstract class Block {
   public c = 0;
   public r = 0;
-  protected x = 0;
-  protected y = 0;
+  public x = 0;
+  public y = 0;
   public rowCount: number;
   public colCount: number;
   protected container: Tetris;
@@ -14,6 +14,7 @@ export abstract class Block {
   private rotationTarget = 0; //in degrees
   private rotationCurrent = 0; //in degrees
   private rotationSpeed = 9 / 20; // degrees per ms
+  public timeStamp: number;
 
   constructor(
     container: Tetris,
@@ -34,8 +35,6 @@ export abstract class Block {
     this.initBlock();
     this.write();
   }
-
-  private timeStamp: number;
 
   onTick(tx: number, ty: number) {
     const now = Date.now();

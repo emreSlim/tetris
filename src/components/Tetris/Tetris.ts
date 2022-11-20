@@ -12,12 +12,10 @@ export class Tetris extends Component {
   readonly height: number;
   readonly cellSize: number; //1 pixel for gap
   private currentBlock: Block;
-  public score = 0;
-  public frameDelay = 500;
-  public ctx: CanvasRenderingContext2D;
-  public offsetY: number;
-  public cellGap = 4;
   private level = 1;
+  private fallenCountInCurrentLevel = 0;
+  public isPlaying = false;
+  private mainTimer: number;
   private levelColors = [
     "#bbbbbb40",
     "#b2c3dd40",
@@ -30,29 +28,59 @@ export class Tetris extends Component {
     "#ddc9b240",
     "#dddcb240",
   ];
-  soundEffects = [
+  private soundEffects = [
     new CustomAudio("felldown.m4a"),
     new CustomAudio("clearRows.m4a"),
     new CustomAudio("gameover.m4a"),
   ];
-  constructor(
-    ctx: CanvasRenderingContext2D,
-    width: number,
-    height: number,
-    cellSize = 51
-  ) {
+  public score = 0;
+  public frameDelay = 500;
+  public ctx: CanvasRenderingContext2D;
+  public offsetY: number;
+  public cellGap = 4;
+  public canvas: HTMLCanvasElement;
+
+  constructor(size: number) {
     super();
-    this.cellSize = cellSize;
-    this.ctx = ctx;
-    this.width = width;
-    this.height = height;
-    this.matrixWidth = Math.floor(width / this.cellSize);
-    this.matrixHeight = Math.floor(height / this.cellSize);
+    this.canvas = document.createElement("canvas");
+    this.canvas.width = size;
+    this.canvas.height = size;
+
+    let ctx = this.canvas.getContext("2d");
+    if (ctx) this.ctx = ctx;
+    this.cellSize = size / 16;
+    this.width = size;
+    this.height = size;
+    this.matrixWidth = Math.floor(this.width / this.cellSize);
+    this.matrixHeight = Math.floor(this.height / this.cellSize);
 
     this.matrix = new Array(this.matrixHeight);
     this.offsetY = (this.height - this.cellSize * this.matrixHeight) / 2;
-    this.fillMatrix();
-    this.play();
+
+    this.addRandomBlock();
+  }
+
+  public startGame() {
+    if (this.ctx === null) return;
+
+    this.ctx.fillStyle = "white";
+    this.ctx.fillRect(0, 0, this.width, this.height);
+    const starting = new Text(
+      "Starting..",
+      this.width / 2,
+      this.height / 2,
+      48
+    );
+    starting.style = "black";
+    starting.centered = true;
+    starting.draw(this.ctx);
+    this.initMatrix();
+    this.fallenCountInCurrentLevel = 0;
+    this.level = 1;
+    this.score = 0;
+    this.frameDelay = 500;
+
+    window.setTimeout(this.play, 1000); //play after 1 second
   }
 
   public setVolume = (vol: number) => {
@@ -104,7 +132,7 @@ export class Tetris extends Component {
     this.draw(this.ctx);
   };
 
-  private fillMatrix() {
+  private initMatrix() {
     for (let r = 0; r < this.matrixHeight; r++) {
       this.matrix[r] = new Array(this.matrixWidth);
       for (let c = 0; c < this.matrixWidth; c++) {
@@ -243,14 +271,54 @@ export class Tetris extends Component {
     );
   };
 
-  public play() {
-    this.fillMatrix();
-    this.addRandomBlock();
-    let count = 1;
-    this.draw(this.ctx);
-    let requestFrame = true;
+  private onTick = () => {
+    const fallen = !this.currentBlock.moveDown();
+    if (fallen) {
+      const filledRows = this.getFilledRows();
+      if (filledRows.length > 0) {
+        this.setFilledRows(filledRows);
+        this.soundEffects[1].replay();
+        window.setTimeout(() => {
+          this.clearFilledRows(filledRows);
+        }, this.frameDelay / 2);
+      } else {
+        this.soundEffects[0].replay();
+      }
+      this.currentBlock.freeze();
+
+      this.addRandomBlock();
+      this.fallenCountInCurrentLevel++;
+      const blockMoveable = this.currentBlock.moveDown();
+      if (!blockMoveable) {
+        this.isPlaying = false;
+        window.clearInterval(this.mainTimer);
+        this.soundEffects[2].replay(1);
+        this.gameOverCb?.();
+        return;
+      }
+    }
+
+    if (this.fallenCountInCurrentLevel > 16) {
+      //increase the speed
+      this.level++;
+      window.clearInterval(this.mainTimer);
+      this.frameDelay *= 0.85;
+      this.fallenCountInCurrentLevel = 0;
+      this.mainTimer = window.setInterval(this.onTick, this.frameDelay);
+    }
+  };
+
+  public play = () => {
+    window.addEventListener("keydown", this.onKeyDown);
+    this.canvas.addEventListener("pointerdown", this.onPointerDown);
+
+    this.isPlaying = true;
+    this.currentBlock.timeStamp = Date.now();
+    this.currentBlock.updateVH();
+    this.currentBlock.updateVV();
+
     const cb = () => {
-      if (requestFrame) {
+      if (this.isPlaying) {
         this.draw(this.ctx);
         window.requestAnimationFrame(cb);
       }
@@ -258,47 +326,15 @@ export class Tetris extends Component {
 
     window.requestAnimationFrame(cb);
 
-    let mainTimer: number;
+    this.mainTimer = window.setInterval(this.onTick, this.frameDelay);
+  };
 
-    const onTick = () => {
-      const fallen = !this.currentBlock.moveDown();
-
-      if (fallen) {
-        const filledRows = this.getFilledRows();
-        if (filledRows.length > 0) {
-          this.setFilledRows(filledRows);
-          this.soundEffects[1].replay();
-          window.setTimeout(() => {
-            this.clearFilledRows(filledRows);
-          }, this.frameDelay / 2);
-        } else {
-          this.soundEffects[0].replay();
-        }
-        this.currentBlock.freeze();
-
-        this.addRandomBlock();
-        count++;
-        const blockMoveable = this.currentBlock.moveDown();
-        if (!blockMoveable) {
-          requestFrame = false;
-          window.clearInterval(mainTimer);
-          this.soundEffects[2].replay(1);
-          this.gameOverCb?.();
-          return;
-        }
-      }
-
-      if (count > 16) {
-        this.level++;
-        window.clearInterval(mainTimer);
-        this.frameDelay *= 0.85;
-        count = 0;
-        mainTimer = window.setInterval(onTick, this.frameDelay);
-      }
-    };
-
-    mainTimer = window.setInterval(onTick, this.frameDelay);
-  }
+  public pause = () => {
+    this.isPlaying = false;
+    window.clearInterval(this.mainTimer);
+    window.removeEventListener("keydown", this.onKeyDown);
+    this.canvas.removeEventListener("pointerdown", this.onPointerDown);
+  };
 
   private getFilledRows = () => {
     const indices: number[] = [];

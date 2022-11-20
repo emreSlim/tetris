@@ -1,4 +1,4 @@
-import { GameCanvas } from "./components/GameCanvas/GameCanvas";
+import { Tetris } from "./components/Tetris/Tetris";
 import "./style.css";
 
 document.body.onload = () => {
@@ -7,17 +7,18 @@ document.body.onload = () => {
 
   const size = Math.min(window.innerHeight, window.innerWidth) - 40;
 
-  const game = new GameCanvas(size, size);
-  container.appendChild(game.node);
-  game.node.hidden = true;
+  const game = new Tetris(size);
+  container.appendChild(game.canvas);
+  game.canvas.hidden = true;
 
   const start = document.createElement("button");
   start.innerText = "Start";
 
   start.onclick = () => {
     game.startGame();
+    playpause.hidden = false;
     start.hidden = true;
-    game.node.hidden = false;
+    game.canvas.hidden = false;
   };
 
   const gameover = document.createElement("div");
@@ -39,11 +40,12 @@ document.body.onload = () => {
     start.hidden = false;
   };
 
-  game.onGameOver = (s) => {
-    game.node.hidden = true;
+  game.onGameOver(() => {
+    game.canvas.hidden = true;
     gameover.hidden = false;
-    score.innerText = "Score: " + s;
-  };
+    playpause.hidden = true;
+    score.innerText = "Score: " + game.score;
+  });
 
   container.appendChild(start);
 
@@ -52,20 +54,36 @@ document.body.onload = () => {
   const volumeIcon = new Image(50, 50);
   volumeIcon.classList.add("volume-icon");
   volumeIcon.src = require("./assets/images/volume-up.png").default;
-  let is = true;
+  let isVolOn = true;
 
   volumeIcon.onclick = () => {
-    is = !is;
-
-    game.setVolume(is ? 1 : 0);
-
+    isVolOn = !isVolOn;
+    game.setVolume(isVolOn ? 1 : 0);
     volumeIcon.src = require(`./assets/images/volume-${
-      is ? "up" : "off"
+      isVolOn ? "up" : "off"
     }.png`).default;
   };
 
   volumeIcon.onload = () => {
     document.body.appendChild(volumeIcon);
+  };
+
+  const playpause = new Image(50, 50);
+  playpause.classList.add("pause-icon");
+  playpause.src = require("./assets/images/pause.png").default;
+  playpause.hidden = true;
+
+  playpause.onclick = () => {
+    game.isPlaying ? game.pause() : game.play();
+
+    playpause.src = require(`./assets/images/${
+      game.isPlaying ? "pause" : "play"
+    }.png`).default;
+    playpause.title = game.isPlaying ? "pause" : "play";
+  };
+
+  playpause.onload = () => {
+    document.body.appendChild(playpause);
   };
 
   document.addEventListener(
