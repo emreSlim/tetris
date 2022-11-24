@@ -1,4 +1,4 @@
-import { Tetris } from "../Tetris/Tetris";
+import { CellState, Tetris } from "../Tetris/Tetris";
 
 export abstract class Block {
   public c = 0;
@@ -15,6 +15,7 @@ export abstract class Block {
   private rotationCurrent = 0; //in degrees
   private rotationSpeed = 9 / 20; // degrees per ms
   public timeStamp: number;
+  private isAnimating = false;
 
   constructor(
     container: Tetris,
@@ -34,6 +35,15 @@ export abstract class Block {
 
     this.initBlock();
     this.write();
+  }
+
+  startAnimating() {
+    this.isAnimating = true;
+    this.timeStamp = Date.now();
+  }
+  stopAnimating() {
+    this.isAnimating = false;
+    this.timeStamp = Date.now();
   }
 
   onTick(tx: number, ty: number) {
@@ -100,15 +110,15 @@ export abstract class Block {
   }
 
   freeze() {
-    this.traverse((val) => (val > 0 ? val : 2));
+    this.traverse((val) => (val === CellState.moving ? CellState.filled : val));
   }
 
-  write() {
-    this.traverse(() => 0);
+  write(val = CellState.moving) {
+    this.traverse(() => val);
   }
 
   erase() {
-    this.traverse(() => -1);
+    this.traverse(() => CellState.empty);
   }
 
   abstract initBlock(): void;
@@ -163,7 +173,7 @@ export abstract class Block {
   }
 
   protected traverse(
-    cb: (val: number, row: number, col: number) => number | boolean | void
+    cb: (val: CellState, row: number, col: number) => CellState | boolean | void
   ) {
     outer: for (let r = 0; r < this.rowCount; r++) {
       for (let c = 0; c < this.colCount; c++) {
@@ -176,13 +186,15 @@ export abstract class Block {
           col < 0 ||
           row > this.container.matrixHeight ||
           col > this.container.matrixWidth;
-        const val = isOutOfFrame ? -1 : this.container.matrix[row][col];
+        const val = isOutOfFrame
+          ? CellState.empty
+          : this.container.matrix[row][col];
 
         const returnVal = cb(val, row, col);
         if (!isOutOfFrame && typeof returnVal === "number") {
           this.container.matrix[row][col] = returnVal;
         } else if (returnVal === false) {
-          //-1 stops the loops
+          //false stops the loops
           break outer;
         }
       }
@@ -203,9 +215,12 @@ export abstract class Block {
       this.traverse((_, r, c) => {
         c += x;
         if (this.container.isLegalCell(r, c)) {
-          if (this.container.matrix[r][c] > 0) {
-            noConflict = false;
-            return false;
+          switch (this.container.matrix[r][c]) {
+            case CellState.clearing:
+            case CellState.filled: {
+              noConflict = false;
+              return false;
+            }
           }
         }
       });
@@ -220,9 +235,12 @@ export abstract class Block {
       this.traverse((_, r, c) => {
         r += y;
         if (this.container.isLegalCell(r, c)) {
-          if (this.container.matrix[r][c] > 0) {
-            noConflict = false;
-            return false;
+          switch (this.container.matrix[r][c]) {
+            case CellState.clearing:
+            case CellState.filled: {
+              noConflict = false;
+              return false;
+            }
           }
         }
       });

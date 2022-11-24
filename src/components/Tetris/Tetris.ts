@@ -4,8 +4,15 @@ import { Text } from "../Text/Text";
 import { Block, L, J, P, I, O, S, Z } from "../TetrisBlocks";
 import { CustomAudio } from "../CustomAudio/CustomAudio";
 
+export enum CellState {
+  empty,
+  moving,
+  clearing,
+  filled,
+}
+
 export class Tetris extends Component {
-  readonly matrix: number[][]; // -1 = space; 0 = moving; 1 = about to clear; 2 = filled
+  readonly matrix: CellState[][]; // -1 = space; 0 = moving; 1 = about to clear; 2 = filled
   readonly matrixWidth: number;
   readonly matrixHeight: number;
   readonly width: number;
@@ -136,13 +143,13 @@ export class Tetris extends Component {
     for (let r = 0; r < this.matrixHeight; r++) {
       this.matrix[r] = new Array(this.matrixWidth);
       for (let c = 0; c < this.matrixWidth; c++) {
-        this.matrix[r][c] = -1;
+        this.matrix[r][c] = CellState.empty;
       }
     }
   }
 
   private traverse(
-    cb: (val: number, row: number, col: number) => number | void
+    cb: (val: CellState, row: number, col: number) => CellState | void
   ) {
     for (let r = 0; r < this.matrixHeight; r++) {
       for (let c = 0; c < this.matrixWidth; c++) {
@@ -159,17 +166,27 @@ export class Tetris extends Component {
     ctx.fillStyle =
       this.levelColors[(this.level - 1) % this.levelColors.length];
     this.traverse((val, r, c) => {
-      if (val > 0) return;
-
-      this.fillCell(r, c, 0, this.offsetY);
+      switch (val) {
+        case CellState.empty:
+        case CellState.moving: {
+          this.fillCell(r, c, 0, this.offsetY);
+        }
+      }
     });
     this.displayArrows(ctx);
     this.displayScore(ctx);
 
     this.traverse((val, r, c) => {
-      if (val === -1 || val === 0) return;
-      ctx.fillStyle = val == 2 ? "#f00" : val == 1 ? "#0f0" : "#bbb4 ";
-      this.fillCell(r, c, 0, this.offsetY);
+      switch (val) {
+        case CellState.clearing:
+          ctx.fillStyle = "#0f0";
+          this.fillCell(r, c, 0, this.offsetY);
+          break;
+        case CellState.filled:
+          ctx.fillStyle = "#f00";
+          this.fillCell(r, c, 0, this.offsetY);
+          break;
+      }
     });
 
     this.currentBlock.draw(ctx);
@@ -344,7 +361,7 @@ export class Tetris extends Component {
       //reverse
       let areAllFilled = true;
       for (let c = this.matrixWidth - 1; c >= 0; c--) {
-        if (this.matrix[r][c] === -1) {
+        if (this.matrix[r][c] === CellState.empty) {
           areAllFilled = false;
           break;
         }
@@ -357,7 +374,7 @@ export class Tetris extends Component {
   private setFilledRows = (indices: number[]) => {
     for (let r of indices) {
       for (let c = 0; c < this.matrixWidth; c++) {
-        this.matrix[r][c] = 1;
+        this.matrix[r][c] = CellState.clearing;
       }
     }
   };
@@ -366,11 +383,10 @@ export class Tetris extends Component {
     for (let rowIndex of indices) {
       for (let r = rowIndex; r >= 0; r--) {
         for (let c = 0; c < this.matrixWidth; c++) {
-          if (this.matrix[r][c] !== 0) {
+          if (this.matrix[r][c] !== CellState.moving) {
+            if (r === 0) this.matrix[r][c] = CellState.empty;
             //if not moving
-            if (r === 0) this.matrix[r][c] = -1;
-            else if (this.matrix[r - 1][c] !== 0)
-              //if not moving
+            else if (this.matrix[r - 1][c] !== CellState.moving)
               this.matrix[r][c] = this.matrix[r - 1][c];
           }
         }

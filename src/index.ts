@@ -17,7 +17,7 @@ document.body.onload = () => {
   start.onclick = () => {
     game.startGame();
     pause.hidden = false;
-    start.hidden = true;
+    start.style.display = "none";
     game.canvas.hidden = false;
   };
 
@@ -37,7 +37,7 @@ document.body.onload = () => {
   gameover.appendChild(lobbyNavBtn);
   lobbyNavBtn.onclick = () => {
     gameover.hidden = true;
-    start.hidden = false;
+    start.style.display = "flex";
   };
 
   game.onGameOver(() => {
