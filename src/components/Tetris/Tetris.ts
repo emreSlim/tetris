@@ -22,6 +22,7 @@ export class Tetris extends Component {
   private level = 1;
   private fallenCountInCurrentLevel = 0;
   public isPlaying = false;
+  public hasStarted = false;
   private mainTimer: number;
   private levelColors = [
     "#bbbbbb40",
@@ -87,7 +88,8 @@ export class Tetris extends Component {
     this.score = 0;
     this.frameDelay = 500;
 
-    window.setTimeout(this.play, 1000); //play after 1 second
+    window.setTimeout(this.play, 200); //play after 1 second
+    this.hasStarted = true;
   }
 
   public setVolume = (vol: number) => {
@@ -112,31 +114,152 @@ export class Tetris extends Component {
       this.currentBlock.rotate();
     }
     if (e.key == " ") {
-      let moveDownBy =
-        this.matrixHeight - (this.currentBlock.r + this.currentBlock.rowCount);
-      let moved = false;
-      do {
-        moved = this.currentBlock.moveDown(moveDownBy);
-        if (moved) break;
-        moveDownBy--;
-      } while (!moved && moveDownBy > 0);
+      this.currentBlock.falldown();
     }
 
     this.draw(this.ctx);
   };
-
-  public onPointerDown = (e: PointerEvent) => {
-    if (e.offsetX > this.width * (3 / 4)) {
-      this.currentBlock.moveRight();
-    } else if (e.offsetX < this.width / 4) {
-      this.currentBlock.moveLeft();
-    } else if (e.offsetY > this.height * (3 / 4)) {
-      this.currentBlock.moveDown();
+  private blockClick = false;
+  public onClick = (e: PointerEvent) => {
+    if (!this.blockClick) {
+      if (e.offsetX > this.width * (2 / 3)) {
+        this.currentBlock.moveRight();
+      } else if (e.offsetX < this.width / 3) {
+        this.currentBlock.moveLeft();
+      } else if (e.offsetY > this.height * (2 / 3)) {
+        this.currentBlock.moveDown();
+      } else {
+        this.currentBlock.rotate();
+      }
     } else {
-      this.currentBlock.rotate();
+      this.blockClick = false;
     }
+  };
 
-    this.draw(this.ctx);
+  private isDragActive = false;
+  private isGuestureActive = false;
+  private guestureStartEvent: { pageX: number; pageY: number };
+
+  private dragStartHandler = () => {
+    this.isDragActive = true;
+    this.canvas.addEventListener("pointermove", this.dragHandler);
+  };
+
+  private dragEndHandler = () => {
+    this.canvas.removeEventListener("pointermove", this.dragHandler);
+    this.isDragActive = false;
+  };
+
+  private guestureStartHandler = (e: PointerEvent) => {
+    this.isGuestureActive = true;
+    this.guestureStartEvent = { pageX: e.pageX, pageY: e.pageY };
+    window.addEventListener("pointermove", this.guestureHandler);
+  };
+
+  private guestureEndHandler = () => {
+    window.removeEventListener("pointermove", this.guestureHandler);
+    this.isGuestureActive = false;
+    this.guestureStartEvent = null;
+  };
+
+  public canvasPointerDownHandler = (e: PointerEvent) => {
+    if (this.currentBlock.intersectsPoint(e.offsetX, e.offsetY)) {
+      this.dragStartHandler();
+      e.stopPropagation();
+    }
+  };
+
+  private windowPointerDownHandler = (e: PointerEvent) => {
+    this.guestureStartHandler(e);
+  };
+
+  private pointerUpHandler = (ev: PointerEvent) => {
+    if (this.isDragActive) {
+      this.dragEndHandler();
+    }
+    if (this.isGuestureActive) {
+      this.guestureEndHandler();
+    }
+  };
+
+  private guestureHandler = (ev: PointerEvent) => {
+    const isX =
+      Math.abs(ev.pageX - this.guestureStartEvent.pageX) >
+      Math.abs(ev.pageY - this.guestureStartEvent.pageY);
+
+    if (
+      isX &&
+      Math.abs(ev.pageX - this.guestureStartEvent.pageX) > this.cellSize
+    ) {
+      const deltaC = Math.round(
+        (ev.pageX - this.guestureStartEvent.pageX) / this.cellSize
+      );
+
+      if (deltaC > 0) {
+        for (let i = 0; i < deltaC; i++) {
+          if (!this.currentBlock.moveRight()) break;
+        }
+      } else if (deltaC < 0) {
+        for (let i = 0; i > deltaC; i--) {
+          if (!this.currentBlock.moveLeft()) break;
+        }
+      }
+
+      this.guestureStartEvent.pageX += deltaC * this.cellSize;
+      this.guestureStartEvent.pageY = ev.pageY;
+    }
+    if (
+      !isX &&
+      Math.abs(ev.pageY - this.guestureStartEvent.pageY) > this.cellSize
+    ) {
+      if (ev.pageY - this.guestureStartEvent.pageY > 0) {
+        const deltaR = Math.round(
+          (ev.pageY - this.guestureStartEvent.pageY) / this.cellSize
+        );
+        for (let i = 0; i < deltaR; i++) {
+          if (!this.currentBlock.moveDown()) break;
+        }
+
+        this.guestureStartEvent.pageY += deltaR * this.cellSize;
+        this.guestureStartEvent.pageX = ev.pageX;
+      } else {
+        this.currentBlock.rotate();
+        this.guestureEndHandler();
+      }
+    }
+    this.blockClick = true;
+  };
+
+  private dragHandler = (ev: PointerEvent) => {
+    if (ev.movementX) {
+      const deltaC = Math.round(
+        ev.offsetX / this.cellSize -
+          (this.currentBlock.c + this.currentBlock.colCount / 2)
+      );
+
+      if (deltaC > 0) {
+        for (let i = 0; i < deltaC; i++) {
+          if (!this.currentBlock.moveRight()) break;
+        }
+      } else if (deltaC < 0) {
+        for (let i = 0; i > deltaC; i--) {
+          if (!this.currentBlock.moveLeft()) break;
+        }
+      }
+      this.blockClick = true;
+    }
+    if (ev.movementY) {
+      const deltaR = Math.round(
+        ev.offsetY / this.cellSize -
+          (this.currentBlock.r + this.currentBlock.rowCount / 2)
+      );
+      if (deltaR > 0) {
+        for (let i = 0; i < deltaR; i++) {
+          if (!this.currentBlock.moveDown()) break;
+        }
+      }
+      this.blockClick = true;
+    }
   };
 
   private initMatrix() {
@@ -302,6 +425,7 @@ export class Tetris extends Component {
         this.soundEffects[0].replay();
       }
       this.currentBlock.freeze();
+      this.dragEndHandler();
 
       this.addRandomBlock();
       this.fallenCountInCurrentLevel++;
@@ -311,6 +435,7 @@ export class Tetris extends Component {
         window.clearInterval(this.mainTimer);
         this.soundEffects[2].replay(1);
         this.gameOverCb?.();
+        this.hasStarted = false;
         return;
       }
     }
@@ -319,7 +444,7 @@ export class Tetris extends Component {
       //increase the speed
       this.level++;
       window.clearInterval(this.mainTimer);
-      this.frameDelay *= 0.85;
+      this.frameDelay *= 0.9;
       this.fallenCountInCurrentLevel = 0;
       this.mainTimer = window.setInterval(this.onTick, this.frameDelay);
     }
@@ -329,7 +454,10 @@ export class Tetris extends Component {
     if (this.isPlaying) return;
 
     window.addEventListener("keydown", this.onKeyDown);
-    this.canvas.addEventListener("pointerdown", this.onPointerDown);
+    this.canvas.addEventListener("pointerdown", this.canvasPointerDownHandler);
+    window.addEventListener("pointerdown", this.windowPointerDownHandler);
+    this.canvas.addEventListener("click", this.onClick);
+    window.addEventListener("pointerup", this.pointerUpHandler);
 
     this.isPlaying = true;
     this.currentBlock.timeStamp = Date.now();
@@ -352,7 +480,14 @@ export class Tetris extends Component {
     this.isPlaying = false;
     window.clearInterval(this.mainTimer);
     window.removeEventListener("keydown", this.onKeyDown);
-    this.canvas.removeEventListener("pointerdown", this.onPointerDown);
+    this.canvas.removeEventListener(
+      "pointerdown",
+      this.canvasPointerDownHandler
+    );
+    window.removeEventListener("pointerdown", this.windowPointerDownHandler);
+
+    this.canvas.removeEventListener("click", this.onClick);
+    window.removeEventListener("pointerup", this.pointerUpHandler);
   };
 
   private getFilledRows = () => {

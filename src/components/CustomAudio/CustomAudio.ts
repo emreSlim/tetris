@@ -4,6 +4,7 @@ export class CustomAudio {
   constructor(fileName: string) {
     this.audio = new Audio(require("../../assets/sound/" + fileName).default);
     this.audio.preload = "auto";
+    document.body.appendChild(this.audio);
   }
 
   replay(from = 0) {

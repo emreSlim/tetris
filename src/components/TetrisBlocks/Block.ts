@@ -21,7 +21,7 @@ export abstract class Block {
     container: Tetris,
     colCount: number,
     rowCount: number,
-    initC = Math.floor(container.matrixWidth / 2)
+    initC = Math.round(container.matrixWidth / 2 - colCount / 2)
   ) {
     this.container = container;
     this.colCount = colCount;
@@ -257,6 +257,8 @@ export abstract class Block {
       this.c += x;
       this.r += y;
       this.write();
+      this.updateVH();
+      this.updateVV();
       return true;
     } else {
       return false;
@@ -307,14 +309,16 @@ export abstract class Block {
     return false;
   }
 
-  moveUp() {
-    if (this.scanVerticalNeighbours(-1)) {
-      this.erase();
-      this.r -= 1;
-      this.write();
-      this.updateVV();
-      return true;
-    }
-    return false;
+  falldown = () => {
+    while (this.moveDown()) {}
+  };
+
+  intersectsPoint(x: number, y: number) {
+    return (
+      x > this.x &&
+      x < this.x + this.colCount * this.container.cellSize &&
+      y > this.y &&
+      y < this.y + this.rowCount * this.container.cellSize
+    );
   }
 }

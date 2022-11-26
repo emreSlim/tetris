@@ -79,15 +79,24 @@ document.body.onload = () => {
     document.body.appendChild(volIsOffIcon);
   };
 
+  const pausedText = document.createElement("p");
+  pausedText.innerText = "Paused";
+  pausedText.style.fontSize = size / 8 + "px";
+  pausedText.classList.add("paused-text");
+  pausedText.hidden = true;
+  container.appendChild(pausedText);
+
   const pause = new Image(50, 50);
   pause.classList.add("pause-icon");
   pause.src = require("./assets/images/pause.png").default;
   pause.hidden = true;
-  pause.onclick = () => {
+  const pauseGame = () => {
     game.pause();
     pause.hidden = true;
     play.hidden = false;
+    pausedText.hidden = false;
   };
+  pause.onclick = pauseGame;
   pause.onload = () => {
     document.body.appendChild(pause);
   };
@@ -96,11 +105,13 @@ document.body.onload = () => {
   play.classList.add("pause-icon");
   play.src = require("./assets/images/play.png").default;
   play.hidden = true;
-  play.onclick = () => {
+  const playGame = () => {
     game.play();
     play.hidden = true;
     pause.hidden = false;
+    pausedText.hidden = true;
   };
+  play.onclick = playGame;
 
   play.onload = () => {
     document.body.appendChild(play);
@@ -113,4 +124,13 @@ document.body.onload = () => {
     },
     { passive: false }
   );
+
+  window.onblur = () => {
+    if (game.hasStarted) pauseGame();
+  };
+  window.addEventListener("keydown", (e) => {
+    if (game.hasStarted && e.key === "Escape") {
+      game.isPlaying ? pauseGame() : playGame();
+    }
+  });
 };
