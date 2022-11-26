@@ -296,7 +296,7 @@ export abstract class Block {
       this.container.frameDelay;
   }
 
-  moveDown(by = 1) {
+  readonly moveDown = (by = 1) => {
     if (this.scanVerticalNeighbours(by)) {
       if (!this.timeStamp) this.timeStamp = Date.now();
       this.erase();
@@ -307,7 +307,7 @@ export abstract class Block {
       return true;
     }
     return false;
-  }
+  };
 
   falldown = () => {
     while (this.moveDown()) {}
